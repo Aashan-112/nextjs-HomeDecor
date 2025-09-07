@@ -1,0 +1,86 @@
+import { ShippingAddress, ShippingCalculator } from './shipping'
+import { CartItem, Product, ShippingQuote, ShippingMethod, ShippingZone } from './types'
+import { 
+  PAKISTAN_CITIES, 
+  PAKISTAN_SHIPPING_ZONES,
+  getPakistanCityByPostalCode,
+  getPakistanCityById,
+  getPakistanShippingRate,
+  PakistanCity 
+} from './data/pakistan-locations'
+
+/**
+ * Extended shipping calculator specifically for Pakistan
+ */
+export class PakistanShippingCalculator extends ShippingCalculator {
+  
+  /**
+   * Calculate shipping specifically for Pakistan addresses
+   */
+  async calculatePakistanShipping(
+    cartItems: CartItem[],
+    products: Product[],
+    destination: ShippingAddress,
+    cityId?: string
+  ): Promise<ShippingQuote[]> {
+    // Validate it's a Pakistan address
+    if (destination.country !== 'PK') {
+      throw new Error('This calculator is only for Pakistan addresses')
+    }
+
+    // Check if all items require shipping
+    const shippableItems = cartItems.filter(item => {
+      const product = products.find(p => p.id === item.product_id)
+      return product?.requires_shipping !== false
+    })
+
+    if (shippableItems.length === 0) {
+      return [{
+        method_id: 'free',
+        method_name: 'No Shipping Required',
+        cost: 0
+      }]
+    }
+
+    // Find the city either by ID or postal code
+    let city: PakistanCity | undefined
+    
+    if (cityId) {
+      city = getPakistanCityById(cityId)
+    } else if (destination.postal_code) {
+      city = getPakistanCityByPostalCode(destination.postal_code)
+    }
+
+    if (!city) {
+      // Default to most expensive shipping for unknown locations
+      return [{
+        method_id: 'standard-pakistan',
+        method_name: 'Standard Delivery',
+        cost: 500, // PKR
+        estimated_days: 7
+      }]
+    }
+
+    // Calculate order subtotal in PKR
+    const subtotal = cartItems.reduce((sum, item) => sum + item.total_price, 0)
+    
+    // Get shipping rates for the city
+    const shippingInfo = getPakistanShippingRate(city.id, subtotal)
+    
+    // Create shipping quotes based on available options
+    const quotes: ShippingQuote[] = []
+
+    // Standard delivery (always available)
+    quotes.push({
+      method_id: `standard-${city.shipping_zone}`,
+      method_name: `Standard Delivery to ${city.name}`,
+      cost: shippingInfo.rate,
+      estimated_days: shippingInfo.estimatedDays,
+      carrier: 'Pakistan Post'
+    })
+
+    // Express delivery (only for metro and urban areas)
+    if (city.shipping_zone === 'metro' || city.shipping_zone === 'urban') {
+      const expressRate = shippingInfo.isFree ? 0 : shippingInfo.rate * 1.5
+      quotes.push({
+        method_id: `express-${city.shipping_zone}`,\n        method_name: `Express Delivery to ${city.name}`,\n        cost: expressRate,\n        estimated_days: Math.max(1, shippingInfo.estimatedDays - 1),\n        carrier: 'TCS Express'\n      })\n    }\n\n    // Cash on Delivery (COD) option\n    if (city.shipping_zone !== 'rural') {\n      const codFee = 50 // PKR COD fee\n      quotes.push({\n        method_id: `cod-${city.shipping_zone}`,\n        method_name: `Cash on Delivery - ${city.name}`,\n        cost: shippingInfo.rate + codFee,\n        estimated_days: shippingInfo.estimatedDays,\n        carrier: 'Leopards Courier'\n      })\n    }\n\n    return quotes.sort((a, b) => a.cost - b.cost)\n  }\n\n  /**\n   * Get delivery options for a specific Pakistani city\n   */\n  static getDeliveryOptionsForCity(cityId: string): {\n    city: PakistanCity | undefined\n    options: Array<{\n      name: string\n      description: string\n      estimatedDays: number\n      available: boolean\n    }>\n  } {\n    const city = getPakistanCityById(cityId)\n    \n    const options = [\n      {\n        name: 'Standard Delivery',\n        description: 'Regular postal service delivery',\n        estimatedDays: city?.estimated_delivery_days || 7,\n        available: true\n      },\n      {\n        name: 'Express Delivery',\n        description: 'Faster courier service',\n        estimatedDays: Math.max(1, (city?.estimated_delivery_days || 7) - 1),\n        available: city?.shipping_zone !== 'rural'\n      },\n      {\n        name: 'Cash on Delivery',\n        description: 'Pay when you receive your order',\n        estimatedDays: city?.estimated_delivery_days || 7,\n        available: city?.shipping_zone !== 'rural'\n      },\n      {\n        name: 'Same Day Delivery',\n        description: 'Delivery within the same day',\n        estimatedDays: 0,\n        available: city?.shipping_zone === 'metro' && city.is_major_city\n      }\n    ]\n\n    return { city, options }\n  }\n\n  /**\n   * Calculate shipping cost with Pakistani currency formatting\n   */\n  static formatPakistanCurrency(amount: number): string {\n    return new Intl.NumberFormat('en-PK', {\n      style: 'currency',\n      currency: 'PKR',\n      minimumFractionDigits: 0,\n      maximumFractionDigits: 0\n    }).format(amount)\n  }\n\n  /**\n   * Get shipping zones data for Pakistan\n   */\n  static getPakistanShippingZones() {\n    return PAKISTAN_SHIPPING_ZONES\n  }\n\n  /**\n   * Get all Pakistani cities data\n   */\n  static getPakistanCities() {\n    return PAKISTAN_CITIES\n  }\n\n  /**\n   * Search cities by name (for autocomplete)\n   */\n  static searchPakistanCities(query: string): PakistanCity[] {\n    const searchTerm = query.toLowerCase().trim()\n    return PAKISTAN_CITIES\n      .filter(city => \n        city.name.toLowerCase().includes(searchTerm) ||\n        city.province.toLowerCase().includes(searchTerm)\n      )\n      .sort((a, b) => {\n        // Prioritize major cities and exact matches\n        if (a.is_major_city && !b.is_major_city) return -1\n        if (!a.is_major_city && b.is_major_city) return 1\n        \n        // Exact name match comes first\n        const aExact = a.name.toLowerCase().startsWith(searchTerm)\n        const bExact = b.name.toLowerCase().startsWith(searchTerm)\n        if (aExact && !bExact) return -1\n        if (!aExact && bExact) return 1\n        \n        return a.name.localeCompare(b.name)\n      })\n      .slice(0, 10) // Limit results for performance\n  }\n}\n\n/**\n * Helper function to create Pakistan shipping zones for the main shipping calculator\n */\nexport function createPakistanShippingZones(): ShippingZone[] {\n  return [\n    {\n      id: 'pk-metro',\n      name: 'Pakistan - Metro Cities',\n      description: 'Major metropolitan areas (Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad)',\n      countries: ['PK'],\n      states: ['Punjab', 'Sindh', 'Federal Capital Territory'],\n      postal_codes: ['54', '75', '44', '46', '38'], // Major city prefixes\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-urban',\n      name: 'Pakistan - Urban Areas',\n      description: 'City centers and urban districts',\n      countries: ['PK'],\n      states: ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan'],\n      postal_codes: [], // Will match by state if postal code not in metro\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-rural',\n      name: 'Pakistan - Rural Areas',\n      description: 'Remote and rural locations',\n      countries: ['PK'],\n      states: ['Gilgit-Baltistan', 'Azad Kashmir'],\n      postal_codes: ['15', '10'], // Rural area prefixes\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    }\n  ]\n}\n\n/**\n * Helper function to create Pakistan shipping methods\n */\nexport function createPakistanShippingMethods(): ShippingMethod[] {\n  return [\n    {\n      id: 'pk-standard-metro',\n      name: 'Standard Delivery - Metro',\n      description: 'Regular delivery to major cities',\n      type: 'zone_based',\n      base_cost: 150,\n      free_shipping_threshold: 2500,\n      zones: ['pk-metro'],\n      carriers: ['Pakistan Post', 'TCS'],\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-standard-urban',\n      name: 'Standard Delivery - Urban',\n      description: 'Regular delivery to urban areas',\n      type: 'zone_based',\n      base_cost: 200,\n      free_shipping_threshold: 3000,\n      zones: ['pk-urban'],\n      carriers: ['Pakistan Post', 'Leopards'],\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-standard-rural',\n      name: 'Standard Delivery - Rural',\n      description: 'Regular delivery to rural areas',\n      type: 'zone_based',\n      base_cost: 300,\n      free_shipping_threshold: 4000,\n      zones: ['pk-rural'],\n      carriers: ['Pakistan Post'],\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-express-metro',\n      name: 'Express Delivery - Metro',\n      description: 'Fast delivery to major cities',\n      type: 'zone_based',\n      base_cost: 250,\n      zones: ['pk-metro'],\n      carriers: ['TCS Express', 'Leopards Express'],\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    },\n    {\n      id: 'pk-express-urban',\n      name: 'Express Delivery - Urban',\n      description: 'Fast delivery to urban areas',\n      type: 'zone_based',\n      base_cost: 350,\n      zones: ['pk-urban'],\n      carriers: ['TCS Express', 'Leopards Express'],\n      is_active: true,\n      created_at: new Date().toISOString(),\n      updated_at: new Date().toISOString()\n    }\n  ]\n}

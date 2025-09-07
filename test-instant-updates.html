@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Updates Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.connected { background: #22c55e; animation: pulse 2s infinite; }
+        .status-indicator.disconnected { background: #ef4444; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .log { 
+            background: #1f2937; 
+            color: #f3f4f6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            font-size: 12px; 
+            height: 300px; 
+            overflow-y: auto; 
+            white-space: pre-wrap;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        .stat-number { font-size: 24px; font-weight: bold; color: #1e40af; }
+        .stat-label { color: #64748b; font-size: 14px; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .alert.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Real-Time Updates Test Dashboard</h1>
+    
+    <div class="container">
+        <h2>🔗 Connection Status</h2>
+        <p>
+            <span class="status-indicator" id="sseStatus"></span>
+            <span id="sseStatusText">Connecting to SSE...</span>
+        </p>
+        <p>
+            <span class="status-indicator" id="apiStatus"></span>
+            <span id="apiStatusText">Testing API...</span>
+        </p>
+        <button onclick="connectSSE()">🔄 Reconnect SSE</button>
+        <button onclick="testAPI()">🧪 Test API</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 Real-Time Statistics</h2>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="totalProducts">0</div>
+                <div class="stat-label">Total Products</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="featuredProducts">0</div>
+                <div class="stat-label">Featured Products</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="sseEvents">0</div>
+                <div class="stat-label">SSE Events Received</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="lastUpdate">Never</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📱 Live Event Log</h2>
+        <div class="log" id="eventLog"></div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Quick Tests</h2>
+        <p>Use these buttons to test different scenarios:</p>
+        <button onclick="simulateProductAdd()">➕ Simulate New Product</button>
+        <button onclick="fetchCurrentProducts()">📦 Fetch Current Products</button>
+        <button onclick="fetchFeaturedProducts()">⭐ Fetch Featured Products</button>
+        <button onclick="testDiagnosis()">🔍 Run Diagnosis</button>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let sseEventCount = 0;
+        let lastProductCount = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('eventLog');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'sse' ? '📡' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`${prefix} ${message}`);
+        }
+
+        function updateStatus(elementId, connected, text) {
+            const statusEl = document.getElementById(elementId);
+            const textEl = document.getElementById(elementId + 'Text');
+            statusEl.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
+            textEl.textContent = text;
+        }
+
+        function updateStat(statId, value) {
+            document.getElementById(statId).textContent = value;
+        }
+
+        function connectSSE() {
+            if (eventSource) {
+                eventSource.close();
+                log('Closed existing SSE connection');
+            }
+
+            log('🔗 Connecting to SSE stream...');
+            eventSource = new EventSource('/api/products/stream');
+
+            eventSource.onopen = function(event) {
+                log('✅ SSE connection established', 'success');
+                updateStatus('sseStatus', true, 'Connected to live updates');
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    sseEventCount++;
+                    
+                    log(`📡 SSE Event: ${data.event} ${data.message || ''}`, 'sse');
+                    updateStat('sseEvents', sseEventCount);
+                    updateStat('lastUpdate', new Date().toLocaleTimeString());
+
+                    if (data.event === 'new_product') {
+                        log(`🎉 NEW PRODUCT DETECTED: ${data.data.name}`, 'success');
+                        showAlert(`🎉 NEW PRODUCT: "${data.data.name}" added instantly!`, 'success');
+                        fetchCurrentProducts(); // Refresh counts
+                    } else if (data.event === 'product_updated') {
+                        log(`🔄 PRODUCT UPDATED: ${data.data.name}`, 'success');
+                        showAlert(`🔄 UPDATED: "${data.data.name}" modified!`, 'success');
+                        fetchCurrentProducts(); // Refresh counts
+                    }
+                } catch (error) {
+                    log(`❌ Error parsing SSE data: ${error.message}`, 'error');
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                log('❌ SSE connection error', 'error');
+                updateStatus('sseStatus', false, 'Connection failed');
+                
+                // Auto-reconnect after 3 seconds
+                setTimeout(() => {
+                    log('🔄 Attempting to reconnect SSE...');
+                    connectSSE();
+                }, 3000);
+            };
+        }
+
+        async function testAPI() {
+            try {
+                log('🧪 Testing /api/public/products...');
+                const response = await fetch('/api/public/products?t=' + Date.now());
+                
+                if (response.ok) {
+                    const products = await response.json();
+                    log(`✅ API test successful: ${products.length} products`, 'success');
+                    updateStatus('apiStatus', true, 'API responding correctly');
+                    updateStat('totalProducts', products.length);
+                    
+                    if (products.length !== lastProductCount && lastProductCount > 0) {
+                        const diff = products.length - lastProductCount;
+                        log(`📈 Product count changed: ${diff > 0 ? '+' : ''}${diff}`, 'success');
+                    }
+                    lastProductCount = products.length;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ API test failed: ${error.message}`, 'error');
+                updateStatus('apiStatus', false, 'API error');
+            }
+        }
+
+        async function fetchCurrentProducts() {
+            await testAPI();
+        }
+
+        async function fetchFeaturedProducts() {
+            try {
+                log('⭐ Fetching featured products...');
+                const response = await fetch('/api/public/featured-products?t=' + Date.now());
+                
+                if (response.ok) {
+                    const products = await response.json();
+                    log(`✅ Featured products: ${products.length}`, 'success');
+                    updateStat('featuredProducts', products.length);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Featured products failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDiagnosis() {
+            try {
+                log('🔍 Running diagnosis...');
+                const response = await fetch('/api/diagnose/products');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`🔍 Diagnosis complete:`, 'success');
+                    log(`   Service Role: ${data.tests.serviceRoleAll.count} products`);
+                    log(`   Public API: ${data.tests.publicApiReplication.count} products`);
+                    log(`   Anonymous: ${data.tests.anonymousClient.count} products`);
+                    log(`   Issues: ${data.summary.issues.join(', ') || 'None'}`);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Diagnosis failed: ${error.message}`, 'error');
+            }
+        }
+
+        function simulateProductAdd() {
+            log('💡 To test real product addition:');
+            log('1. Go to http://localhost:3000/admin/products/add');
+            log('2. Create a new product');
+            log('3. Watch this dashboard for instant SSE events!');
+            showAlert('💡 Create a product in the admin panel to see instant updates!', 'success');
+        }
+
+        function clearLog() {
+            document.getElementById('eventLog').textContent = '';
+            log('🗑️ Log cleared');
+        }
+
+        function showAlert(message, type) {
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Auto-refresh stats every 2 seconds
+        setInterval(() => {
+            fetchCurrentProducts();
+            fetchFeaturedProducts();
+        }, 2000);
+
+        // Initialize on page load
+        window.onload = function() {
+            log('🚀 Real-time updates test dashboard initialized');
+            connectSSE();
+            testAPI();
+            fetchFeaturedProducts();
+            
+            log('💡 Instructions:');
+            log('1. Keep this page open');
+            log('2. Go to admin panel and create a new product');
+            log('3. Watch for instant SSE events here!');
+        };
+
+        // Clean up on page unload
+        window.onbeforeunload = function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        };
+    </script>
+</body>
+</html>

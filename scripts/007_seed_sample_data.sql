@@ -1,0 +1,121 @@
+-- Insert sample categories
+INSERT INTO categories (name, description, image_url) VALUES
+('Mirrors', 'Handcrafted decorative mirrors for your home', '/placeholder.jpg?height=300&width=400'),
+('Furniture', 'Arts & Crafts-made furniture pieces', '/placeholder.jpg?height=300&width=400'),
+('Lighting', 'Unique lighting fixtures and lamps', '/placeholder.jpg?height=300&width=400'),
+('Decor', 'Home decor and accessories', '/placeholder.jpg?height=300&width=400');
+
+-- Insert sample products
+INSERT INTO products (name, description, price, compare_at_price, sku, images, category_id, stock_quantity, is_active, is_featured, materials, colors) VALUES
+(
+  'Rustic Wooden Mirror',
+  'A beautiful handcrafted mirror with reclaimed wood frame, perfect for adding warmth to any room.',
+  149.99,
+  199.99,
+  'RWM-001',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Mirrors' LIMIT 1),
+  15,
+  true,
+  true,
+  ARRAY['Reclaimed Wood', 'Glass'],
+  ARRAY['Natural', 'Brown']
+),
+(
+  'Vintage Brass Mirror',
+  'An elegant vintage-style brass mirror that brings sophistication to your space.',
+  89.99,
+  119.99,
+  'VBM-002',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Mirrors' LIMIT 1),
+  8,
+  true,
+  true,
+  ARRAY['Brass', 'Glass'],
+  ARRAY['Gold', 'Brass']
+),
+(
+  'Handwoven Rattan Chair',
+  'Comfortable and stylish rattan chair, perfect for indoor or outdoor use.',
+  299.99,
+  NULL,
+  'HRC-003',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Furniture' LIMIT 1),
+  5,
+  true,
+  true,
+  ARRAY['Rattan', 'Cotton Cushion'],
+  ARRAY['Natural', 'Beige']
+),
+(
+  'Ceramic Table Lamp',
+  'Arts & Crafts-made ceramic table lamp with unique glazed finish.',
+  79.99,
+  99.99,
+  'CTL-004',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Lighting' LIMIT 1),
+  12,
+  true,
+  true,
+  ARRAY['Ceramic', 'Fabric Shade'],
+  ARRAY['White', 'Blue']
+),
+(
+  'Macrame Wall Hanging',
+  'Beautiful handmade macrame wall hanging to add texture to your walls.',
+  45.99,
+  NULL,
+  'MWH-005',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Decor' LIMIT 1),
+  20,
+  true,
+  true,
+  ARRAY['Cotton Cord'],
+  ARRAY['Natural', 'Cream']
+),
+(
+  'Wooden Coffee Table',
+  'Solid wood coffee table with live edge design, each piece is unique.',
+  449.99,
+  549.99,
+  'WCT-006',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Furniture' LIMIT 1),
+  3,
+  true,
+  true,
+  ARRAY['Walnut Wood', 'Steel Legs'],
+  ARRAY['Natural', 'Dark Brown']
+),
+(
+  'Pendant Light Fixture',
+  'Modern pendant light with woven shade, perfect for dining areas.',
+  129.99,
+  NULL,
+  'PLF-007',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Lighting' LIMIT 1),
+  7,
+  true,
+  true,
+  ARRAY['Bamboo', 'Metal'],
+  ARRAY['Natural', 'Black']
+),
+(
+  'Ceramic Vase Set',
+  'Set of three handmade ceramic vases in different sizes.',
+  69.99,
+  89.99,
+  'CVS-008',
+  ARRAY['/placeholder.jpg?height=400&width=400'],
+  (SELECT id FROM categories WHERE name = 'Decor' LIMIT 1),
+  10,
+  true,
+  true,
+  ARRAY['Ceramic'],
+  ARRAY['White', 'Terracotta']
+);
