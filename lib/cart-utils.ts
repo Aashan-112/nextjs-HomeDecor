@@ -16,7 +16,11 @@ export class CartUtils {
     shippingCalculator: ShippingCalculator | null = null
   ): Promise<CartSummary> {
     // Calculate subtotal
-    const subtotal = cartItems.reduce((sum, item) => sum + item.total_price, 0)
+    const subtotal = cartItems.reduce((sum, item) => {
+      const product = products.find(p => p.id === item.product_id)
+      const price = product ? (product.price || 0) : 0
+      return sum + (price * item.quantity)
+    }, 0)
 
     let shippingAmount = 0
     let availableShippingMethods: ShippingQuote[] = []
@@ -63,7 +67,7 @@ export class CartUtils {
       shipping_amount: shippingAmount,
       total_amount: totalAmount,
       available_shipping_methods: availableShippingMethods,
-      selected_shipping_method: selectedShippingMethodId
+      selected_shipping_method: selectedShippingMethodId || undefined
     }
   }
 
@@ -80,17 +84,17 @@ export class CartUtils {
       const product = products.find(p => p.id === item.product_id)
       
       if (!product) {
-        errors.push(`Product ${item.product_name} is no longer available`)
+        errors.push(`Product with ID ${item.product_id} is no longer available`)
         continue
       }
 
       // Check if product is still active
-      if (product.status !== 'active') {
+      if (!product.is_active) {
         errors.push(`Product ${product.name} is no longer available`)
       }
 
       // Check stock availability
-      if (product.track_inventory && product.stock_quantity < item.quantity) {
+      if (product.stock_quantity < item.quantity) {
         if (product.stock_quantity === 0) {
           errors.push(`Product ${product.name} is out of stock`)
         } else {
@@ -100,11 +104,8 @@ export class CartUtils {
         }
       }
 
-      // Check price changes (optional - could notify user of price changes)
-      if (Math.abs(product.price - item.unit_price) > 0.01) {
-        // Price has changed - you might want to notify the user
-        console.warn(`Price changed for ${product.name}: was ${item.unit_price}, now ${product.price}`)
-      }
+      // Price validation - could be extended to check against stored prices if needed
+      // For now, we skip price change detection since CartItem doesn't store unit_price
     }
 
     return {
@@ -115,23 +116,15 @@ export class CartUtils {
 
   /**
    * Update cart item prices to match current product prices
+   * Note: CartItem doesn't store price info, this validates against current product prices
    */
   static updateCartItemPrices(
     cartItems: CartItem[],
     products: Product[]
   ): CartItem[] {
-    return cartItems.map(item => {
-      const product = products.find(p => p.id === item.product_id)
-      if (!product) return item
-
-      const updatedPrice = product.sale_price ?? product.price
-      
-      return {
-        ...item,
-        unit_price: updatedPrice,
-        total_price: updatedPrice * item.quantity
-      }
-    })
+    // Since CartItem doesn't store price info, just return the items
+    // Price calculations are done at checkout time using current product prices
+    return cartItems
   }
 
   /**
@@ -226,10 +219,10 @@ export class CartUtils {
 
     for (const item of cartItems) {
       const product = products.find(p => p.id === item.product_id)
-      if (!product || !product.sale_price) continue
+      if (!product || !product.compare_at_price) continue
 
-      const regularPrice = product.price
-      const salePrice = product.sale_price
+      const regularPrice = product.compare_at_price
+      const salePrice = product.price
       const savingsPerItem = regularPrice - salePrice
       
       totalSavings += savingsPerItem * item.quantity

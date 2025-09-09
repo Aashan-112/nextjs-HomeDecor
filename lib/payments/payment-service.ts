@@ -140,14 +140,16 @@ export class PaymentService {
     if (!selectedMethod) {
       return {
         success: false,
-        error: 'Invalid payment method selected'
+        error: 'Invalid payment method selected',
+        message: 'Please select a valid payment method'
       }
     }
 
     if (!selectedMethod.available) {
       return {
         success: false,
-        error: 'Payment method is not available for this order'
+        error: 'Payment method is not available for this order',
+        message: 'Selected payment method is not available for this order amount'
       }
     }
 
@@ -173,7 +175,8 @@ export class PaymentService {
       default:
         return {
           success: false,
-          error: 'Payment provider not implemented'
+          error: 'Payment provider not implemented',
+          message: 'This payment method is not yet supported'
         }
     }
   }
@@ -206,7 +209,8 @@ export class PaymentService {
     } catch (error) {
       return {
         success: false,
-        error: 'Credit card payment failed. Please try again.'
+        error: 'Credit card payment failed. Please try again.',
+        message: 'Payment processing failed. Please check your card details and try again.'
       }
     }
   }
@@ -270,7 +274,8 @@ export class PaymentService {
       console.error('JazzCash payment error:', error)
       return {
         success: false,
-        error: 'JazzCash payment failed. Please check your mobile wallet balance and try again.'
+        error: 'JazzCash payment failed. Please check your mobile wallet balance and try again.',
+        message: 'JazzCash payment could not be processed. Please verify your account balance.'
       }
     }
   }
@@ -334,7 +339,8 @@ export class PaymentService {
       console.error('EasyPaisa payment error:', error)
       return {
         success: false,
-        error: 'EasyPaisa payment failed. Please check your mobile wallet balance and try again.'
+        error: 'EasyPaisa payment failed. Please check your mobile wallet balance and try again.',
+        message: 'EasyPaisa payment could not be processed. Please verify your account balance.'
       }
     }
   }

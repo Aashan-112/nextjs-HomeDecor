@@ -62,7 +62,11 @@ export class PakistanShippingCalculator extends ShippingCalculator {
     }
 
     // Calculate order subtotal in PKR
-    const subtotal = cartItems.reduce((sum, item) => sum + item.total_price, 0)
+    const subtotal = cartItems.reduce((sum, item) => {
+      const product = products.find(p => p.id === item.product_id)
+      const price = product ? product.price : 0
+      return sum + (price * item.quantity)
+    }, 0)
     
     // Get shipping rates for the city
     const shippingInfo = getPakistanShippingRate(city.id, subtotal)

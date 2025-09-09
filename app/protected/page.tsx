@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 export const dynamic = "force-dynamic"
 
 export default async function ProtectedPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   if (!supabase) {
     console.error("Supabase client not available")

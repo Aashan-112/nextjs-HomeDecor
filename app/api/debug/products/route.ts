@@ -54,7 +54,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Test anonymous client access (what the fallback uses)
-    const { data: anonProducts, error: anonError } = await createServerClient()
+    const anonSupabase = await createServerClient()
+    const { data: anonProducts, error: anonError } = await anonSupabase
       .from("products")
       .select("id, name, sku, is_active, is_featured, created_at")
       .eq("is_active", true)

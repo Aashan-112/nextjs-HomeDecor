@@ -19,8 +19,15 @@ import Image from "next/image"
 import type { Order, OrderItem } from "@/lib/types"
 import { toast } from "sonner"
 
+interface OrderItemWithProduct extends OrderItem {
+  products?: {
+    name: string
+    images: string[]
+  }
+}
+
 interface OrderWithItems extends Order {
-  order_items: OrderItem[]
+  order_items: OrderItemWithProduct[]
 }
 
 export default function AdminOrderDetailPage() {
@@ -63,7 +70,7 @@ export default function AdminOrderDetailPage() {
           
           console.log('🔍 [ORDER DETAIL] Racing auth call against timeout...')
           
-          let authResult
+          let authResult: any
           try {
             authResult = await Promise.race([authPromise, authTimeout])
           } catch (timeoutError) {
@@ -92,7 +99,7 @@ export default function AdminOrderDetailPage() {
                 
               console.log('🔍 [ORDER DETAIL] Racing direct query against timeout...')
               
-              let queryResult
+              let queryResult: any
               try {
                 queryResult = await Promise.race([directQueryPromise, directQueryTimeout])
               } catch (queryTimeoutError) {
@@ -119,7 +126,7 @@ export default function AdminOrderDetailPage() {
                 }
               }
               
-              const { data, error } = queryResult
+              const { data, error } = queryResult as any
               
               console.log('📊 [ORDER DETAIL] Direct fetch completed:')
               console.log('  - Has data:', !!data)
@@ -178,7 +185,7 @@ export default function AdminOrderDetailPage() {
             }
           }
         
-          const { data: { user }, error: authError } = authResult
+          const { data: { user }, error: authError } = authResult as any
           
           console.log('🔐 [ORDER DETAIL] Auth check result:')
           console.log('  - User exists:', !!user)

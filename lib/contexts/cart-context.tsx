@@ -1,1 +1,347 @@
-'use client'\n\nimport React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'\nimport { CartItem, Product, CartSummary } from '../types'\nimport { ShippingAddress, ShippingCalculator } from '../shipping'\nimport { CartUtils } from '../cart-utils'\n\n// Cart Context State\ninterface CartState {\n  items: CartItem[]\n  summary: CartSummary | null\n  shippingAddress: ShippingAddress | null\n  selectedShippingMethodId: string | null\n  isLoading: boolean\n  error: string | null\n  lastCalculated: Date | null\n}\n\n// Cart Actions\ntype CartAction =\n  | { type: 'ADD_ITEM'; payload: { product: Product; quantity: number } }\n  | { type: 'UPDATE_QUANTITY'; payload: { itemId: string; quantity: number } }\n  | { type: 'REMOVE_ITEM'; payload: { itemId: string } }\n  | { type: 'CLEAR_CART' }\n  | { type: 'SET_SHIPPING_ADDRESS'; payload: ShippingAddress | null }\n  | { type: 'SET_SHIPPING_METHOD'; payload: string | null }\n  | { type: 'SET_SUMMARY'; payload: CartSummary }\n  | { type: 'SET_LOADING'; payload: boolean }\n  | { type: 'SET_ERROR'; payload: string | null }\n  | { type: 'LOAD_CART'; payload: CartItem[] }\n\n// Cart Context Value\ninterface CartContextValue extends CartState {\n  addItem: (product: Product, quantity?: number) => void\n  updateQuantity: (itemId: string, quantity: number) => void\n  removeItem: (itemId: string) => void\n  clearCart: () => void\n  setShippingAddress: (address: ShippingAddress | null) => void\n  setShippingMethod: (methodId: string | null) => void\n  recalculateCart: (products: Product[], shippingCalculator?: ShippingCalculator) => Promise<void>\n  getItemQuantity: (productId: string) => number\n  getTotalItems: () => number\n  hasItems: boolean\n}\n\n// Initial state\nconst initialState: CartState = {\n  items: [],\n  summary: null,\n  shippingAddress: null,\n  selectedShippingMethodId: null,\n  isLoading: false,\n  error: null,\n  lastCalculated: null\n}\n\n// Cart reducer\nfunction cartReducer(state: CartState, action: CartAction): CartState {\n  switch (action.type) {\n    case 'ADD_ITEM': {\n      const { product, quantity } = action.payload\n      const existingItemIndex = state.items.findIndex(item => item.product_id === product.id)\n      \n      if (existingItemIndex >= 0) {\n        // Update existing item quantity\n        const updatedItems = [...state.items]\n        const existingItem = updatedItems[existingItemIndex]\n        const newQuantity = existingItem.quantity + quantity\n        const unitPrice = product.sale_price ?? product.price\n        \n        updatedItems[existingItemIndex] = {\n          ...existingItem,\n          quantity: newQuantity,\n          unit_price: unitPrice,\n          total_price: unitPrice * newQuantity\n        }\n        \n        return { ...state, items: updatedItems }\n      } else {\n        // Add new item\n        const unitPrice = product.sale_price ?? product.price\n        const newItem: CartItem = {\n          id: `cart-${Date.now()}-${Math.random()}`,\n          product_id: product.id,\n          product_name: product.name,\n          product_sku: product.sku || '',\n          quantity,\n          unit_price: unitPrice,\n          total_price: unitPrice * quantity\n        }\n        \n        return { ...state, items: [...state.items, newItem] }\n      }\n    }\n    \n    case 'UPDATE_QUANTITY': {\n      const { itemId, quantity } = action.payload\n      \n      if (quantity <= 0) {\n        return { ...state, items: state.items.filter(item => item.id !== itemId) }\n      }\n      \n      const updatedItems = state.items.map(item => {\n        if (item.id === itemId) {\n          return {\n            ...item,\n            quantity,\n            total_price: item.unit_price * quantity\n          }\n        }\n        return item\n      })\n      \n      return { ...state, items: updatedItems }\n    }\n    \n    case 'REMOVE_ITEM': {\n      return {\n        ...state,\n        items: state.items.filter(item => item.id !== action.payload.itemId)\n      }\n    }\n    \n    case 'CLEAR_CART': {\n      return {\n        ...initialState\n      }\n    }\n    \n    case 'SET_SHIPPING_ADDRESS': {\n      return {\n        ...state,\n        shippingAddress: action.payload,\n        selectedShippingMethodId: null // Reset shipping method when address changes\n      }\n    }\n    \n    case 'SET_SHIPPING_METHOD': {\n      return {\n        ...state,\n        selectedShippingMethodId: action.payload\n      }\n    }\n    \n    case 'SET_SUMMARY': {\n      return {\n        ...state,\n        summary: action.payload,\n        lastCalculated: new Date()\n      }\n    }\n    \n    case 'SET_LOADING': {\n      return {\n        ...state,\n        isLoading: action.payload\n      }\n    }\n    \n    case 'SET_ERROR': {\n      return {\n        ...state,\n        error: action.payload\n      }\n    }\n    \n    case 'LOAD_CART': {\n      return {\n        ...state,\n        items: action.payload\n      }\n    }\n    \n    default:\n      return state\n  }\n}\n\n// Create context\nconst CartContext = createContext<CartContextValue | undefined>(undefined)\n\n// Local storage key\nconst CART_STORAGE_KEY = 'ecommerce_cart'\n\n// Cart Provider\ninterface CartProviderProps {\n  children: ReactNode\n}\n\nexport function CartProvider({ children }: CartProviderProps) {\n  const [state, dispatch] = useReducer(cartReducer, initialState)\n\n  // Load cart from localStorage on mount\n  useEffect(() => {\n    try {\n      const savedCart = localStorage.getItem(CART_STORAGE_KEY)\n      if (savedCart) {\n        const cartData = JSON.parse(savedCart)\n        dispatch({ type: 'LOAD_CART', payload: cartData })\n      }\n    } catch (error) {\n      console.error('Failed to load cart from localStorage:', error)\n    }\n  }, [])\n\n  // Save cart to localStorage whenever items change\n  useEffect(() => {\n    try {\n      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.items))\n    } catch (error) {\n      console.error('Failed to save cart to localStorage:', error)\n    }\n  }, [state.items])\n\n  // Context value functions\n  const addItem = (product: Product, quantity: number = 1) => {\n    dispatch({ type: 'ADD_ITEM', payload: { product, quantity } })\n  }\n\n  const updateQuantity = (itemId: string, quantity: number) => {\n    dispatch({ type: 'UPDATE_QUANTITY', payload: { itemId, quantity } })\n  }\n\n  const removeItem = (itemId: string) => {\n    dispatch({ type: 'REMOVE_ITEM', payload: { itemId } })\n  }\n\n  const clearCart = () => {\n    dispatch({ type: 'CLEAR_CART' })\n  }\n\n  const setShippingAddress = (address: ShippingAddress | null) => {\n    dispatch({ type: 'SET_SHIPPING_ADDRESS', payload: address })\n  }\n\n  const setShippingMethod = (methodId: string | null) => {\n    dispatch({ type: 'SET_SHIPPING_METHOD', payload: methodId })\n  }\n\n  const recalculateCart = async (\n    products: Product[],\n    shippingCalculator?: ShippingCalculator\n  ) => {\n    if (state.items.length === 0) {\n      dispatch({ type: 'SET_SUMMARY', payload: {\n        items: [],\n        subtotal: 0,\n        tax_amount: 0,\n        shipping_amount: 0,\n        total_amount: 0,\n        available_shipping_methods: [],\n        selected_shipping_method: null\n      }})\n      return\n    }\n\n    dispatch({ type: 'SET_LOADING', payload: true })\n    dispatch({ type: 'SET_ERROR', payload: null })\n\n    try {\n      // Update cart item prices first\n      const updatedItems = CartUtils.updateCartItemPrices(state.items, products)\n      \n      // Calculate cart summary\n      const summary = await CartUtils.calculateCartSummary(\n        updatedItems,\n        products,\n        state.shippingAddress,\n        state.selectedShippingMethodId,\n        shippingCalculator\n      )\n\n      dispatch({ type: 'SET_SUMMARY', payload: summary })\n    } catch (error) {\n      console.error('Failed to recalculate cart:', error)\n      dispatch({ type: 'SET_ERROR', payload: 'Failed to calculate cart total' })\n    } finally {\n      dispatch({ type: 'SET_LOADING', payload: false })\n    }\n  }\n\n  const getItemQuantity = (productId: string): number => {\n    const item = state.items.find(item => item.product_id === productId)\n    return item?.quantity ?? 0\n  }\n\n  const getTotalItems = (): number => {\n    return state.items.reduce((total, item) => total + item.quantity, 0)\n  }\n\n  const hasItems = state.items.length > 0\n\n  const contextValue: CartContextValue = {\n    ...state,\n    addItem,\n    updateQuantity,\n    removeItem,\n    clearCart,\n    setShippingAddress,\n    setShippingMethod,\n    recalculateCart,\n    getItemQuantity,\n    getTotalItems,\n    hasItems\n  }\n\n  return (\n    <CartContext.Provider value={contextValue}>\n      {children}\n    </CartContext.Provider>\n  )\n}\n\n// Hook to use cart context\nexport function useCart() {\n  const context = useContext(CartContext)\n  if (context === undefined) {\n    throw new Error('useCart must be used within a CartProvider')\n  }\n  return context\n}\n\n// Additional hooks for specific use cases\nexport function useCartSummary() {\n  const { summary, isLoading, error } = useCart()\n  return { summary, isLoading, error }\n}\n\nexport function useCartItems() {\n  const { items, getTotalItems, hasItems } = useCart()\n  return { items, totalItems: getTotalItems(), hasItems }\n}\n\nexport function useShipping() {\n  const {\n    shippingAddress,\n    selectedShippingMethodId,\n    summary,\n    setShippingAddress,\n    setShippingMethod\n  } = useCart()\n  \n  return {\n    shippingAddress,\n    selectedShippingMethodId,\n    availableShippingMethods: summary?.available_shipping_methods ?? [],\n    shippingAmount: summary?.shipping_amount ?? 0,\n    setShippingAddress,\n    setShippingMethod\n  }\n}
+'use client'
+
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
+import { CartItem, Product, CartSummary } from '../types'
+import { ShippingAddress, ShippingCalculator } from '../shipping'
+import { CartUtils } from '../cart-utils'
+
+// Cart Context State
+interface CartState {
+  items: CartItem[]
+  summary: CartSummary | null
+  shippingAddress: ShippingAddress | null
+  selectedShippingMethodId: string | null
+  isLoading: boolean
+  error: string | null
+  lastCalculated: Date | null
+}
+
+// Cart Actions
+type CartAction =
+  | { type: 'ADD_ITEM'; payload: { product: Product; quantity: number } }
+  | { type: 'UPDATE_QUANTITY'; payload: { itemId: string; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: { itemId: string } }
+  | { type: 'CLEAR_CART' }
+  | { type: 'SET_SHIPPING_ADDRESS'; payload: ShippingAddress | null }
+  | { type: 'SET_SHIPPING_METHOD'; payload: string | null }
+  | { type: 'SET_SUMMARY'; payload: CartSummary }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'LOAD_CART'; payload: CartItem[] }
+
+// Cart Context Value
+interface CartContextValue extends CartState {
+  addItem: (product: Product, quantity?: number) => void
+  updateQuantity: (itemId: string, quantity: number) => void
+  removeItem: (itemId: string) => void
+  clearCart: () => void
+  setShippingAddress: (address: ShippingAddress | null) => void
+  setShippingMethod: (methodId: string | null) => void
+  recalculateCart: (products: Product[], shippingCalculator?: ShippingCalculator) => Promise<void>
+  getItemQuantity: (productId: string) => number
+  getTotalItems: () => number
+  hasItems: boolean
+}
+
+// Initial state
+const initialState: CartState = {
+  items: [],
+  summary: null,
+  shippingAddress: null,
+  selectedShippingMethodId: null,
+  isLoading: false,
+  error: null,
+  lastCalculated: null
+}
+
+// Cart reducer
+function cartReducer(state: CartState, action: CartAction): CartState {
+  switch (action.type) {
+    case 'ADD_ITEM': {
+      const { product, quantity } = action.payload
+      const existingItemIndex = state.items.findIndex(item => item.product_id === product.id)
+      
+      if (existingItemIndex >= 0) {
+        // Update existing item quantity
+        const updatedItems = [...state.items]
+        const existingItem = updatedItems[existingItemIndex]
+        const newQuantity = existingItem.quantity + quantity
+        
+        updatedItems[existingItemIndex] = {
+          ...existingItem,
+          quantity: newQuantity
+        }
+        
+        return { ...state, items: updatedItems }
+      } else {
+        // Add new item
+        const newItem: CartItem = {
+          id: `cart-${Date.now()}-${Math.random()}`,
+          user_id: '', // Will be set when user is authenticated
+          product_id: product.id,
+          quantity,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          product
+        }
+        
+        return { ...state, items: [...state.items, newItem] }
+      }
+    }
+    
+    case 'UPDATE_QUANTITY': {
+      const { itemId, quantity } = action.payload
+      
+      if (quantity <= 0) {
+        return { ...state, items: state.items.filter(item => item.id !== itemId) }
+      }
+      
+      const updatedItems = state.items.map(item => {
+        if (item.id === itemId) {
+          return {
+            ...item,
+            quantity,
+            updated_at: new Date().toISOString()
+          }
+        }
+        return item
+      })
+      
+      return { ...state, items: updatedItems }
+    }
+    
+    case 'REMOVE_ITEM': {
+      return {
+        ...state,
+        items: state.items.filter(item => item.id !== action.payload.itemId)
+      }
+    }
+    
+    case 'CLEAR_CART': {
+      return {
+        ...initialState
+      }
+    }
+    
+    case 'SET_SHIPPING_ADDRESS': {
+      return {
+        ...state,
+        shippingAddress: action.payload,
+        selectedShippingMethodId: null // Reset shipping method when address changes
+      }
+    }
+    
+    case 'SET_SHIPPING_METHOD': {
+      return {
+        ...state,
+        selectedShippingMethodId: action.payload
+      }
+    }
+    
+    case 'SET_SUMMARY': {
+      return {
+        ...state,
+        summary: action.payload,
+        lastCalculated: new Date()
+      }
+    }
+    
+    case 'SET_LOADING': {
+      return {
+        ...state,
+        isLoading: action.payload
+      }
+    }
+    
+    case 'SET_ERROR': {
+      return {
+        ...state,
+        error: action.payload
+      }
+    }
+    
+    case 'LOAD_CART': {
+      return {
+        ...state,
+        items: action.payload
+      }
+    }
+    
+    default:
+      return state
+  }
+}
+
+// Create context
+const CartContext = createContext<CartContextValue | undefined>(undefined)
+
+// Local storage key
+const CART_STORAGE_KEY = 'ecommerce_cart'
+
+// Cart Provider
+interface CartProviderProps {
+  children: ReactNode
+}
+
+export function CartProvider({ children }: CartProviderProps) {
+  const [state, dispatch] = useReducer(cartReducer, initialState)
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem(CART_STORAGE_KEY)
+      if (savedCart) {
+        const cartData = JSON.parse(savedCart)
+        dispatch({ type: 'LOAD_CART', payload: cartData })
+      }
+    } catch (error) {
+      console.error('Failed to load cart from localStorage:', error)
+    }
+  }, [])
+
+  // Save cart to localStorage whenever items change
+  useEffect(() => {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.items))
+    } catch (error) {
+      console.error('Failed to save cart to localStorage:', error)
+    }
+  }, [state.items])
+
+  // Context value functions
+  const addItem = (product: Product, quantity: number = 1) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, quantity } })
+  }
+
+  const updateQuantity = (itemId: string, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { itemId, quantity } })
+  }
+
+  const removeItem = (itemId: string) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: { itemId } })
+  }
+
+  const clearCart = () => {
+    dispatch({ type: 'CLEAR_CART' })
+  }
+
+  const setShippingAddress = (address: ShippingAddress | null) => {
+    dispatch({ type: 'SET_SHIPPING_ADDRESS', payload: address })
+  }
+
+  const setShippingMethod = (methodId: string | null) => {
+    dispatch({ type: 'SET_SHIPPING_METHOD', payload: methodId })
+  }
+
+  const recalculateCart = async (
+    products: Product[],
+    shippingCalculator?: ShippingCalculator
+  ) => {
+    if (state.items.length === 0) {
+      dispatch({ type: 'SET_SUMMARY', payload: {
+        items: [],
+        subtotal: 0,
+        tax_amount: 0,
+        shipping_amount: 0,
+        total_amount: 0,
+        available_shipping_methods: [],
+        selected_shipping_method: undefined
+      }})
+      return
+    }
+
+    dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_ERROR', payload: null })
+
+    try {
+      // Update cart item prices first
+      const updatedItems = CartUtils.updateCartItemPrices(state.items, products)
+      
+      // Calculate cart summary
+      const summary = await CartUtils.calculateCartSummary(
+        updatedItems,
+        products,
+        state.shippingAddress,
+        state.selectedShippingMethodId,
+        shippingCalculator
+      )
+
+      dispatch({ type: 'SET_SUMMARY', payload: summary })
+    } catch (error) {
+      console.error('Failed to recalculate cart:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to calculate cart total' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }
+
+  const getItemQuantity = (productId: string): number => {
+    const item = state.items.find(item => item.product_id === productId)
+    return item?.quantity ?? 0
+  }
+
+  const getTotalItems = (): number => {
+    return state.items.reduce((total, item) => total + item.quantity, 0)
+  }
+
+  const hasItems = state.items.length > 0
+
+  const contextValue: CartContextValue = {
+    ...state,
+    addItem,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    setShippingAddress,
+    setShippingMethod,
+    recalculateCart,
+    getItemQuantity,
+    getTotalItems,
+    hasItems
+  }
+
+  return (
+    <CartContext.Provider value={contextValue}>
+      {children}
+    </CartContext.Provider>
+  )
+}
+
+// Hook to use cart context
+export function useCart() {
+  const context = useContext(CartContext)
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider')
+  }
+  return context
+}
+
+// Additional hooks for specific use cases
+export function useCartSummary() {
+  const { summary, isLoading, error } = useCart()
+  return { summary, isLoading, error }
+}
+
+export function useCartItems() {
+  const { items, getTotalItems, hasItems } = useCart()
+  return { items, totalItems: getTotalItems(), hasItems }
+}
+
+export function useShipping() {
+  const {
+    shippingAddress,
+    selectedShippingMethodId,
+    summary,
+    setShippingAddress,
+    setShippingMethod
+  } = useCart()
+  
+  return {
+    shippingAddress,
+    selectedShippingMethodId,
+    availableShippingMethods: summary?.available_shipping_methods ?? [],
+    shippingAmount: summary?.shipping_amount ?? 0,
+    setShippingAddress,
+    setShippingMethod
+  }
+}

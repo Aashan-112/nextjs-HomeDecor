@@ -66,27 +66,25 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const updatedItems = [...state.items]
         const existingItem = updatedItems[existingItemIndex]
         const newQuantity = existingItem.quantity + quantity
-        const unitPrice = product.sale_price ?? product.price
+        const unitPrice = product.compare_at_price ? product.price : product.price
         
         updatedItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
-          unit_price: unitPrice,
-          total_price: unitPrice * newQuantity
+          updated_at: new Date().toISOString()
         }
         
         return { ...state, items: updatedItems }
       } else {
         // Add new item
-        const unitPrice = product.sale_price ?? product.price
         const newItem: CartItem = {
           id: `cart-${Date.now()}-${Math.random()}`,
+          user_id: '', // Will be set when user is authenticated
           product_id: product.id,
-          product_name: product.name,
-          product_sku: product.sku || '',
           quantity,
-          unit_price: unitPrice,
-          total_price: unitPrice * quantity
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          product
         }
         
         return { ...state, items: [...state.items, newItem] }
@@ -105,7 +103,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           return {
             ...item,
             quantity,
-            total_price: item.unit_price * quantity
+            updated_at: new Date().toISOString()
           }
         }
         return item
@@ -249,7 +247,7 @@ export function CartProvider({ children }: CartProviderProps) {
         shipping_amount: 0,
         total_amount: 0,
         available_shipping_methods: [],
-        selected_shipping_method: null
+        selected_shipping_method: undefined
       }})
       return
     }
