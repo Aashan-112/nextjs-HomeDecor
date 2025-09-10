@@ -10,7 +10,7 @@ import crypto from 'crypto'
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Extract JazzCash callback parameters
     const callbackData = {

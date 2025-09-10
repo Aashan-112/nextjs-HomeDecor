@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createClient as createServerClient } from "@/lib/supabase/server"
-import { ProductEventEmitter } from "@/app/api/products/stream/route"
+import { ProductEventEmitter } from '@/lib/product-events'
 
 export const dynamic = "force-dynamic"
 

@@ -9,9 +9,7 @@ export async function updateSession(request: NextRequest) {
     "/account",
     "/admin",
     "/protected",
-    "/cart",
-    "/checkout",
-    "/wishlist",
+    // Removed /cart, /checkout, /wishlist - now support guest users
     "/orders",
   ]
 

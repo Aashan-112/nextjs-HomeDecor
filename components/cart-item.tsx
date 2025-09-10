@@ -6,11 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Minus, Plus, Trash2 } from "lucide-react"
-import type { CartItem, Product } from "@/lib/types"
+import type { Product } from "@/lib/types"
 import { useState } from "react"
 
+// Cart item with product data for UI (matches the context)
+interface CartItemWithProduct {
+  id: string
+  product_id: string
+  quantity: number
+  created_at: string
+  product: Product
+}
+
 interface CartItemProps {
-  item: CartItem & { product: Product }
+  item: CartItemWithProduct
   onUpdateQuantity: (itemId: string, quantity: number) => Promise<void>
   onRemove: (itemId: string) => Promise<void>
 }

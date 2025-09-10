@@ -83,7 +83,7 @@ export interface Address {
 
 export interface Order {
   id: string
-  user_id: string
+  user_id: string | null  // Allow null for guest orders
   order_number: string
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
   subtotal: number
@@ -109,6 +109,8 @@ export interface Order {
   billing_state: string
   billing_postal_code: string
   billing_country: string
+  customer_email?: string     // Email for guest orders
+  customer_phone?: string     // Phone for guest orders
   notes?: string
   created_at: string
   updated_at: string

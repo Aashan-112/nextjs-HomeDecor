@@ -210,12 +210,12 @@ export default function AdminAnalyticsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{analytics?.totalOrders}</div>
                 <div className="flex items-center text-xs">
-                  {analytics?.ordersGrowth >= 0 ? (
+                  {(analytics?.ordersGrowth ?? 0) >= 0 ? (
                     <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                   ) : (
                     <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
                   )}
-                  <span className={analytics?.ordersGrowth >= 0 ? "text-green-500" : "text-red-500"}>
+                  <span className={(analytics?.ordersGrowth ?? 0) >= 0 ? "text-green-500" : "text-red-500"}>
                     {Math.abs(analytics?.ordersGrowth || 0).toFixed(1)}%
                   </span>
                   <span className="text-muted-foreground ml-1">from last period</span>

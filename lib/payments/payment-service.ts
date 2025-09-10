@@ -52,6 +52,7 @@ export interface PaymentResponse {
   error?: string
   requiresAction?: boolean
   actionType?: 'redirect' | 'verification' | 'manual_confirmation'
+  clientSecret?: string // For Stripe Payment Intent
 }
 
 /**
@@ -140,14 +141,16 @@ export class PaymentService {
     if (!selectedMethod) {
       return {
         success: false,
-        error: 'Invalid payment method selected'
+        error: 'Invalid payment method selected',
+        message: 'Please select a valid payment method'
       }
     }
 
     if (!selectedMethod.available) {
       return {
         success: false,
-        error: 'Payment method is not available for this order'
+        error: 'Payment method is not available for this order',
+        message: 'Selected payment method is not available for this order amount'
       }
     }
 
@@ -173,7 +176,8 @@ export class PaymentService {
       default:
         return {
           success: false,
-          error: 'Payment provider not implemented'
+          error: 'Payment provider not implemented',
+          message: 'This payment method is not yet supported'
         }
     }
   }
@@ -186,27 +190,50 @@ export class PaymentService {
     totalAmount: number
   ): Promise<PaymentResponse> {
     try {
-      // This would integrate with actual Stripe API
-      console.log('Processing Stripe payment:', { 
+      // Create Stripe Payment Intent via our API
+      console.log('Creating Stripe Payment Intent:', { 
         amount: totalAmount, 
         orderId: request.orderId 
       })
       
-      // For now, simulate successful payment
-      // In production, this would create a Stripe Payment Intent
-      const mockPaymentId = `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const response = await fetch('/api/payments/stripe/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: request.currency,
+          orderId: request.orderId,
+          orderNumber: request.orderNumber,
+          customerEmail: request.customerEmail,
+          customerPhone: request.customerPhone,
+          shippingAddress: request.shippingAddress
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create payment intent')
+      }
       
       return {
         success: true,
-        paymentId: mockPaymentId,
-        transactionId: mockPaymentId,
-        message: `Payment of ${PakistanShippingCalculator.formatPakistanCurrency(totalAmount)} processed successfully via Stripe`,
-        requiresAction: false
+        paymentId: data.paymentIntentId,
+        transactionId: data.paymentIntentId,
+        message: `Payment of ${PakistanShippingCalculator.formatPakistanCurrency(totalAmount)} is ready for processing`,
+        requiresAction: true,
+        actionType: 'verification',
+        // Store client secret for frontend payment processing
+        clientSecret: data.clientSecret
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Stripe payment error:', error)
       return {
         success: false,
-        error: 'Credit card payment failed. Please try again.'
+        error: error.message || 'Credit card payment failed. Please try again.',
+        message: 'Payment processing failed. Please check your card details and try again.'
       }
     }
   }
@@ -270,7 +297,8 @@ export class PaymentService {
       console.error('JazzCash payment error:', error)
       return {
         success: false,
-        error: 'JazzCash payment failed. Please check your mobile wallet balance and try again.'
+        error: 'JazzCash payment failed. Please check your mobile wallet balance and try again.',
+        message: 'JazzCash payment could not be processed. Please verify your account balance.'
       }
     }
   }
@@ -334,7 +362,8 @@ export class PaymentService {
       console.error('EasyPaisa payment error:', error)
       return {
         success: false,
-        error: 'EasyPaisa payment failed. Please check your mobile wallet balance and try again.'
+        error: 'EasyPaisa payment failed. Please check your mobile wallet balance and try again.',
+        message: 'EasyPaisa payment could not be processed. Please verify your account balance.'
       }
     }
   }

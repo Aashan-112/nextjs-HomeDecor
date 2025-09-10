@@ -23,11 +23,8 @@ export default function CartPage() {
   const finalTotal = totalAmount + shippingCost + taxAmount
 
   const handleCheckout = () => {
-    if (!user) {
-      router.push("/auth/login?redirect=/checkout")
-    } else {
-      router.push("/checkout")
-    }
+    // Now supporting guest checkout - no auth required
+    router.push("/checkout")
   }
 
   if (loading) {
@@ -168,7 +165,7 @@ export default function CartPage() {
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={handleCheckout}
                   >
-                    {user ? "Proceed to Checkout" : "Sign In to Checkout"}
+                    Proceed to Checkout
                   </Button>
 
                   <div className="text-center">

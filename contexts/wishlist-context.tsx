@@ -2,132 +2,187 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useAuth } from "@/contexts/auth-context"
 import type { Product } from "@/lib/types"
 
-interface WishlistItem {
+// Local wishlist item for localStorage (guest users)
+interface LocalWishlistItem {
   id: string
-  user_id: string
   product_id: string
   created_at: string
-  product?: Product
+}
+
+// Wishlist item with product data for UI
+interface WishlistItemWithProduct {
+  id: string
+  product_id: string
+  created_at: string
+  product: Product
 }
 
 interface WishlistContextType {
-  items: WishlistItem[]
+  items: WishlistItemWithProduct[]
   itemsCount: number
   isInWishlist: (productId: string) => boolean
   addItem: (productId: string) => Promise<void>
   removeItem: (productId: string) => Promise<void>
   toggleItem: (productId: string) => Promise<void>
-  clearWishlist: () => Promise<void>
+  clearWishlist: () => void
   loading: boolean
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined)
 
+// localStorage utilities
+const WISHLIST_STORAGE_KEY = 'guest-wishlist-items'
+
+function getLocalWishlistItems(): LocalWishlistItem[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = localStorage.getItem(WISHLIST_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch (error) {
+    console.error('Error loading wishlist from localStorage:', error)
+    return []
+  }
+}
+
+function saveLocalWishlistItems(items: LocalWishlistItem[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items))
+  } catch (error) {
+    console.error('Error saving wishlist to localStorage:', error)
+  }
+}
+
+function generateWishlistItemId(): string {
+  return `wishlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
-  const [items, setItems] = useState<WishlistItem[]>([])
-  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState<WishlistItemWithProduct[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Fetch wishlist items when user changes
+  // Load wishlist items from localStorage on component mount
   useEffect(() => {
-    if (user) {
-      fetchWishlistItems()
-    } else {
-      setItems([])
-    }
-  }, [user])
+    loadWishlistItems()
+  }, [])
 
-  // Realtime updates for wishlist_items
-  useEffect(() => {
-    if (!user) return
-
-    let channel: any
-    let supabase: any
-    try {
-      supabase = createClient()
-      channel = supabase
-        .channel(`wishlist_items_user_${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'wishlist_items', filter: `user_id=eq.${user.id}` },
-          () => {
-            fetchWishlistItems()
-          }
-        )
-        .subscribe()
-    } catch (e) {
-      console.error('Failed to subscribe to wishlist realtime:', e)
-    }
-
-    return () => {
-      try {
-        if (supabase && channel) {
-          supabase.removeChannel(channel)
-        }
-      } catch {}
-    }
-  }, [user])
-
-  const fetchWishlistItems = async () => {
-    if (!user) return
-
+  async function loadWishlistItems() {
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("wishlist_items")
-        .select(`
-          *,
-          product:products!wishlist_items_product_id_fkey(*)
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+      const localItems = getLocalWishlistItems()
+      
+      if (localItems.length === 0) {
+        setItems([])
+        return
+      }
 
-      if (error) throw error
-      setItems(data || [])
+      // Fetch product details for each wishlist item
+      const supabase = createClient()
+      const productIds = localItems.map(item => item.product_id)
+      
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("*")
+        .in("id", productIds)
+        .eq("is_active", true)
+
+      if (error) {
+        console.error("Error fetching products:", error)
+        setItems([])
+        return
+      }
+
+      // Combine wishlist items with product data
+      const itemsWithProducts: WishlistItemWithProduct[] = localItems
+        .map(wishlistItem => {
+          const product = products?.find(p => p.id === wishlistItem.product_id)
+          if (!product) return null
+          
+          // Normalize product data
+          const normalizedProduct: Product = {
+            ...product,
+            price: typeof product.price === "string" ? parseFloat(product.price) : product.price,
+            compare_at_price:
+              product.compare_at_price == null
+                ? undefined
+                : typeof product.compare_at_price === "string"
+                ? parseFloat(product.compare_at_price)
+                : product.compare_at_price,
+            weight:
+              product.weight == null
+                ? undefined
+                : typeof product.weight === "string"
+                ? parseFloat(product.weight)
+                : product.weight,
+            images: Array.isArray(product.images) ? product.images : product.images ? [product.images] : [],
+            materials: Array.isArray(product.materials) ? product.materials : product.materials ? [product.materials] : [],
+            colors: Array.isArray(product.colors) ? product.colors : product.colors ? [product.colors] : [],
+          }
+          
+          return {
+            ...wishlistItem,
+            product: normalizedProduct
+          }
+        })
+        .filter((item): item is WishlistItemWithProduct => item !== null)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setItems(itemsWithProducts)
+      
+      // Clean up localStorage if any products were removed/inactive
+      if (itemsWithProducts.length !== localItems.length) {
+        const validItems = itemsWithProducts.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          created_at: item.created_at
+        }))
+        saveLocalWishlistItems(validItems)
+      }
     } catch (error) {
-      console.error("Error fetching wishlist:", error)
+      console.error("Error loading wishlist items:", error)
+      setItems([])
     } finally {
       setLoading(false)
     }
   }
 
   const addItem = async (productId: string) => {
-    if (!user) throw new Error("User must be logged in")
-
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from("wishlist_items").insert({
-        user_id: user.id,
+      const localItems = getLocalWishlistItems()
+      const existingItem = localItems.find(item => item.product_id === productId)
+      
+      if (existingItem) {
+        // Item already in wishlist
+        return
+      }
+      
+      // Add new item
+      const newItem: LocalWishlistItem = {
+        id: generateWishlistItemId(),
         product_id: productId,
-      })
-
-      if (error) throw error
-      await fetchWishlistItems()
+        created_at: new Date().toISOString()
+      }
+      
+      const updatedItems = [newItem, ...localItems]
+      saveLocalWishlistItems(updatedItems)
+      await loadWishlistItems()
     } catch (error) {
-      console.error("Error adding to wishlist:", error)
+      console.error("Error adding item to wishlist:", error)
       throw error
     }
   }
 
   const removeItem = async (productId: string) => {
-    if (!user) throw new Error("User must be logged in")
-
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("wishlist_items")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("product_id", productId)
-
-      if (error) throw error
-      await fetchWishlistItems()
+      const localItems = getLocalWishlistItems()
+      const updatedItems = localItems.filter(item => item.product_id !== productId)
+      
+      saveLocalWishlistItems(updatedItems)
+      await loadWishlistItems()
     } catch (error) {
-      console.error("Error removing from wishlist:", error)
+      console.error("Error removing item from wishlist:", error)
       throw error
     }
   }
@@ -140,19 +195,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const clearWishlist = async () => {
-    if (!user) throw new Error("User must be logged in")
-
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.from("wishlist_items").delete().eq("user_id", user.id)
-
-      if (error) throw error
-      setItems([])
-    } catch (error) {
-      console.error("Error clearing wishlist:", error)
-      throw error
-    }
+  function clearWishlist() {
+    saveLocalWishlistItems([])
+    setItems([])
   }
 
   const isInWishlist = (productId: string): boolean => {

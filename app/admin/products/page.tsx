@@ -291,13 +291,22 @@ export default function AdminProductsPageDebug() {
               </Select>
             </div>
 
-            <Button 
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => router.push('/admin/products/add')}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => router.push('/admin/categories')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+              <Button 
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => router.push('/admin/products/add')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            </div>
           </div>
 
           {/* Results */}

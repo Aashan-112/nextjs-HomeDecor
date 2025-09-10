@@ -1,19 +1,18 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Edit, Trash2, ImageIcon } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { Plus, Edit, Trash2, ImageIcon, Package } from "lucide-react"
+import { toast } from "sonner"
 import type { Category } from "@/lib/types"
 
 export default function AdminCategoriesPage() {
@@ -21,6 +20,7 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -32,56 +32,74 @@ export default function AdminCategoriesPage() {
   }, [])
 
   const fetchCategories = async () => {
-    const supabase = createClient()
-
-    const { data, error } = await supabase.from("categories").select("*").order("name")
-
-    if (error) {
-      console.error("Error fetching categories:", error)
-    } else {
-      setCategories(data || [])
+    try {
+      const response = await fetch('/api/admin/categories')
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories')
+      }
+      const data = await response.json()
+      setCategories(data.categories || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      toast.error('Failed to load categories')
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
+    
+    if (!formData.name.trim() || !formData.description.trim() || !formData.image_url.trim()) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    setSubmitting(true)
 
     try {
-      if (editingCategory) {
-        // Update existing category
-        const { error } = await supabase
-          .from("categories")
-          .update({
-            name: formData.name,
-            description: formData.description,
-            image_url: formData.image_url,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingCategory.id)
+      const url = editingCategory 
+        ? `/api/admin/categories/${editingCategory.id}`
+        : '/api/admin/categories'
+      
+      const method = editingCategory ? 'PUT' : 'POST'
 
-        if (error) throw error
-      } else {
-        // Create new category
-        const { error } = await supabase.from("categories").insert({
-          name: formData.name,
-          description: formData.description,
-          image_url: formData.image_url,
-        })
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
 
-        if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save category')
       }
 
-      // Reset form and refresh data
+      const data = await response.json()
+      
+      if (editingCategory) {
+        // Update existing category
+        setCategories(prev => prev.map(cat => 
+          cat.id === editingCategory.id ? data.category : cat
+        ))
+        toast.success('Category updated successfully')
+      } else {
+        // Add new category
+        setCategories(prev => [data.category, ...prev])
+        toast.success('Category created successfully')
+      }
+
+      // Reset form
       setFormData({ name: "", description: "", image_url: "" })
       setEditingCategory(null)
       setIsDialogOpen(false)
-      fetchCategories()
     } catch (error) {
-      console.error("Error saving category:", error)
-      // TODO: Show error toast
+      console.error('Error saving category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save category')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -96,19 +114,21 @@ export default function AdminCategoriesPage() {
   }
 
   const handleDelete = async (categoryId: string) => {
-    if (!confirm("Are you sure you want to delete this category?")) return
-
-    const supabase = createClient()
-
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", categoryId)
+      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'DELETE',
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete category')
+      }
 
-      fetchCategories()
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId))
+      toast.success('Category deleted successfully')
     } catch (error) {
-      console.error("Error deleting category:", error)
-      // TODO: Show error toast
+      console.error('Error deleting category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to delete category')
     }
   }
 
@@ -166,16 +186,29 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  {editingCategory ? "Update" : "Create"} Category
+                <Button type="submit" className="flex-1" disabled={submitting}>
+                  {submitting ? 'Saving...' : editingCategory ? "Update Category" : "Create Category"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={submitting}>
                   Cancel
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{categories.length}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Categories Table */}
@@ -238,14 +271,35 @@ export default function AdminCategoriesPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(category.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{category.name}"? 
+                                This action cannot be undone. Categories with associated products cannot be deleted.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(category.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -253,8 +307,16 @@ export default function AdminCategoriesPage() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No categories found</p>
+            <div className="text-center py-16">
+              <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No categories found</h3>
+              <p className="text-muted-foreground mb-6">
+                Get started by creating your first category
+              </p>
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
             </div>
           )}
         </CardContent>

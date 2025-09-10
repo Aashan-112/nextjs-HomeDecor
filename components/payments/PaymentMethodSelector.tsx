@@ -33,6 +33,7 @@ interface PaymentMethodDisplay {
   available: boolean
   instructions?: string[]
   badge?: string
+  validationError?: string
 }
 
 export default function PaymentMethodSelector({
@@ -184,7 +185,7 @@ export default function PaymentMethodSelector({
                       className={`text-base font-medium cursor-pointer ${getMethodStatusColor(method)}`}
                     >
                       {method.name}
-                      {getMethodBadge(method.badge)}
+                      {method.badge && getMethodBadge(method.badge)}
                     </Label>
                     <p className="text-sm text-muted-foreground mt-1">
                       {method.description}

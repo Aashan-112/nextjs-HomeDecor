@@ -1,7 +1,11 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { AnimatedContainer } from "@/components/ui/animated-container"
+import { StaggerContainer } from "@/components/ui/stagger-container"
 
 export function HeroSection() {
   return (
@@ -10,8 +14,8 @@ export function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Content */}
           <div className="space-y-8">
-            <div className="space-y-4">
-              <Badge variant="secondary" className="bg-accent text-accent-foreground">
+            <StaggerContainer className="space-y-4" staggerDelay={200} initialDelay={300}>
+              <Badge variant="secondary" className="bg-accent text-accent-foreground hover-glow inline-block">
                 Handcrafted Excellence
               </Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight text-balance">
@@ -22,57 +26,71 @@ export function HeroSection() {
                 Discover unique handcrafted mirrors and home accessories. Each piece is carefully crafted by skilled
                 Arts & Crafts using traditional techniques and premium materials.
               </p>
-            </div>
+            </StaggerContainer>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
+            <AnimatedContainer animation="slideUp" delay={900} className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 hover-lift" asChild>
                 <Link href="/products">Shop Collection</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="hover-lift" asChild>
                 <Link href="/about">Our Story</Link>
               </Button>
-            </div>
+            </AnimatedContainer>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4 pt-8">
-              <div className="text-center">
+            <StaggerContainer 
+              className="grid grid-cols-3 gap-4 pt-8" 
+              staggerDelay={150} 
+              initialDelay={1200}
+              animation="scale"
+            >
+              <div className="text-center hover-scale cursor-default">
                 <div className="text-2xl font-bold text-foreground">100+</div>
                 <div className="text-sm text-muted-foreground">Unique Pieces</div>
               </div>
-              <div className="text-center">
+              <div className="text-center hover-scale cursor-default">
                 <div className="text-2xl font-bold text-foreground">5★</div>
                 <div className="text-sm text-muted-foreground">Customer Rating</div>
               </div>
-              <div className="text-center">
+              <div className="text-center hover-scale cursor-default">
                 <div className="text-2xl font-bold text-foreground">24h</div>
                 <div className="text-sm text-muted-foreground">Fast Shipping</div>
               </div>
-            </div>
+            </StaggerContainer>
           </div>
 
           {/* Hero Image */}
-          <div className="relative">
-            <div className="aspect-square relative overflow-hidden rounded-2xl bg-accent/20">
+          <AnimatedContainer animation="scale" delay={600} className="relative">
+            <div className="aspect-square relative overflow-hidden rounded-2xl bg-accent/20 hover-lift">
               <Image
                 src="/elegant-handcrafted-mirror-with-ornate-frame.png"
                 alt="Handcrafted ornate mirror"
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-700 hover:scale-110"
                 priority
               />
 
               {/* Floating Elements */}
-              <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg p-3">
+              <AnimatedContainer 
+                animation="slideLeft" 
+                delay={1500}
+                className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 animate-float hover-glow"
+              >
                 <div className="text-sm font-medium text-foreground">Premium Quality</div>
                 <div className="text-xs text-muted-foreground">Handcrafted</div>
-              </div>
+              </AnimatedContainer>
 
-              <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3">
+              <AnimatedContainer 
+                animation="slideRight" 
+                delay={1800}
+                className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 animate-float hover-glow"
+                duration={700}
+              >
                 <div className="text-sm font-medium text-foreground">Free Shipping</div>
                 <div className="text-xs text-muted-foreground">Orders over $100</div>
-              </div>
+              </AnimatedContainer>
             </div>
-          </div>
+          </AnimatedContainer>
         </div>
       </div>
     </section>

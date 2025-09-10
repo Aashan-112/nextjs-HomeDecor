@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ButtonSpinner } from "@/components/ui/loading-spinner"
 import { Heart, ShoppingCart, ArrowLeft, Share2, Truck, Shield, RotateCcw } from "lucide-react"
 import { createAnonymousClient } from "@/lib/supabase/anonymous"
 import { useCart } from "@/contexts/cart-context"
@@ -30,6 +31,7 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
 
   useEffect(() => {
     async function fetchProduct() {
@@ -122,13 +124,16 @@ export default function ProductDetailPage() {
   const handleToggleWishlist = async () => {
     if (!product) return
 
+    setIsTogglingWishlist(true)
     try {
+      const wasInWishlist = isInWishlist(product.id)
       await toggleItem(product.id)
-      const inWishlist = isInWishlist(product.id)
-      toast.success(inWishlist ? "Removed from wishlist" : "Added to wishlist")
+      toast.success(wasInWishlist ? "Removed from wishlist" : "Added to wishlist")
     } catch (error) {
       console.error("Error toggling wishlist:", error)
       toast.error("Please sign in to manage your wishlist")
+    } finally {
+      setIsTogglingWishlist(false)
     }
   }
 
@@ -377,18 +382,32 @@ export default function ProductDetailPage() {
                   onClick={handleAddToCart}
                   disabled={product.stock_quantity === 0 || isAddingToCart}
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
+                  {isAddingToCart ? (
+                    <>
+                      <ButtonSpinner className="mr-2" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      {product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
+                    </>
+                  )}
                 </Button>
 
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handleToggleWishlist}
+                  disabled={isTogglingWishlist}
                   aria-pressed={isInWishlist(product?.id || "")}
                   aria-label={isInWishlist(product?.id || "") ? "Remove from wishlist" : "Add to wishlist"}
                 >
-                  <Heart className={`h-4 w-4 ${isInWishlist(product?.id || "") ? "fill-current text-white" : ""}`} />
+                  {isTogglingWishlist ? (
+                    <ButtonSpinner />
+                  ) : (
+                    <Heart className={`h-4 w-4 ${isInWishlist(product?.id || "") ? "fill-current text-red-500" : ""}`} />
+                  )}
                 </Button>
 
                 <Button variant="outline" size="icon">

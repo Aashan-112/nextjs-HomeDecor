@@ -126,7 +126,7 @@ export default function AdminDashboard() {
         
         console.log('📊 [DASHBOARD] Racing auth call against timeout...')
         
-        let authResult
+        let authResult: any
         try {
           authResult = await Promise.race([authPromise, authTimeout])
         } catch (timeoutError) {
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
           }
         }
         
-        const { data: { user }, error: authError } = authResult
+        const { data: { user }, error: authError } = authResult as any
         
         console.log('🔐 [DASHBOARD] Auth check completed:')
         console.log('  - User exists:', !!user)

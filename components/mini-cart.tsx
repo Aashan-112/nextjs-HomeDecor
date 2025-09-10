@@ -49,15 +49,7 @@ export function MiniCart() {
     }
   }
 
-  if (!user) {
-    return (
-      <Button variant="ghost" size="icon" asChild>
-        <Link href="/auth/login">
-          <ShoppingCart className="h-5 w-5" />
-        </Link>
-      </Button>
-    )
-  }
+  // Remove authentication requirement - allow guest checkout
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

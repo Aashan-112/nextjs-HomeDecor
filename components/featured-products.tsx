@@ -9,6 +9,8 @@ import type { Product } from "@/lib/types"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStream } from "@/hooks/use-product-stream"
+import { AnimatedContainer } from "@/components/ui/animated-container"
+import { StaggerContainer } from "@/components/ui/stagger-container"
 
 export function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([])
@@ -97,41 +99,53 @@ export function FeaturedProducts() {
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Collection</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Discover our most popular handcrafted pieces, carefully selected for their exceptional quality and unique
-            design.
-          </p>
-        </div>
+        <AnimatedContainer animation="slideUp" delay={200}>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Collection</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+              Discover our most popular handcrafted pieces, carefully selected for their exceptional quality and unique
+              design.
+            </p>
+          </div>
+        </AnimatedContainer>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StaggerContainer 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" 
+            staggerDelay={100} 
+            animation="scale"
+          >
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                <Skeleton className="aspect-[4/3] w-full rounded-lg animate-shimmer" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-3/4 animate-shimmer" />
+                  <Skeleton className="h-4 w-1/2 animate-shimmer" />
+                  <Skeleton className="h-10 w-full animate-shimmer" />
                 </div>
               </div>
             ))}
-          </div>
+          </StaggerContainer>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <StaggerContainer 
+              key={products.length} // Force re-render when products change
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12" 
+              staggerDelay={150} 
+              initialDelay={400}
+              animation="slideUp"
+            >
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </StaggerContainer>
 
             {products.length > 0 && (
-              <div className="text-center">
-                <Button size="lg" variant="outline" asChild>
+              <AnimatedContainer animation="scale" delay={800} className="text-center">
+                <Button size="lg" variant="outline" className="hover-lift hover-glow transition-all duration-300" asChild>
                   <Link href="/products">View All Products</Link>
                 </Button>
-              </div>
+              </AnimatedContainer>
             )}
           </>
         )}

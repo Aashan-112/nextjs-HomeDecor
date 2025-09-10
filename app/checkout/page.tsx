@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingSpinner, ButtonSpinner } from "@/components/ui/loading-spinner"
+import { ProgressDialog } from "@/components/ui/progress-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
@@ -27,6 +29,10 @@ import { BUSINESS_CONFIG, calculateShippingFromMuzaffargarh, isSameDayDeliveryAv
 import { PaymentService, PaymentMethod, PaymentRequest, BUSINESS_BANK_DETAILS } from "@/lib/payments/payment-service"
 
 interface CheckoutForm {
+  // Customer Info
+  customerEmail: string
+  customerPhone: string
+  
   // Shipping Address
   shippingFirstName: string
   shippingLastName: string
@@ -75,7 +81,15 @@ export default function CheckoutPage() {
   const [isSingleItemCheckout, setIsSingleItemCheckout] = useState(false)
   const [singleCheckoutItem, setSingleCheckoutItem] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [checkoutProgress, setCheckoutProgress] = useState<{
+    open: boolean
+    status: 'loading' | 'success' | 'error'
+    message?: string
+    progress?: number
+  }>({open: false, status: 'loading'})
   const [form, setForm] = useState<CheckoutForm>({
+    customerEmail: user?.email || "",
+    customerPhone: user?.phone || "",
     shippingFirstName: "",
     shippingLastName: "",
     shippingCompany: "",
@@ -143,16 +157,13 @@ export default function CheckoutPage() {
       }
     }
 
-    if (!user) {
-      router.push("/auth/login?redirect=/checkout")
-      return
-    }
-
+    // No authentication required for guest checkout
+    // Redirect only if no items in cart (for regular cart checkout)
     if (!cartLoading && !isSingleItemCheckout && items.length === 0) {
       router.push("/cart")
       return
     }
-  }, [user, items, cartLoading, router, isSingleItemCheckout])
+  }, [items, cartLoading, router, isSingleItemCheckout])
 
   const handleInputChange = (field: keyof CheckoutForm, value: string | boolean | PakistanCity | null) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -190,9 +201,18 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
 
     // Validate required fields
+    if (!form.customerEmail || !form.customerEmail.includes('@')) {
+      alert('Please enter a valid email address')
+      return
+    }
+
+    if (!form.shippingFirstName || !form.shippingLastName) {
+      alert('Please enter your full name')
+      return
+    }
+
     if (!form.shippingCityId) {
       alert('Please select your city for shipping')
       return
@@ -204,10 +224,9 @@ export default function CheckoutPage() {
     }
 
     setLoading(true)
+    setCheckoutProgress({open: true, status: 'loading', message: 'Preparing your order...', progress: 10})
 
     try {
-      const supabase = createClient()
-
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
 
@@ -221,7 +240,7 @@ export default function CheckoutPage() {
       const finalTotalWithPaymentFee = finalTotal + paymentFee
 
       // Pre-validate basic payment data (without orderId)
-      if (!user.email || !user.email.includes('@')) {
+      if (!form.customerEmail || !form.customerEmail.includes('@')) {
         throw new Error('Valid customer email is required')
       }
       
@@ -233,9 +252,10 @@ export default function CheckoutPage() {
         throw new Error('Order must contain at least one item')
       }
 
-      // Create order data - try enhanced schema first, fallback to basic
+      // Create order data - support both authenticated and anonymous users  
+      const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000' // Special UUID for guest users
       const orderData: any = {
-        user_id: user.id,
+        user_id: user?.id || GUEST_USER_ID, // Use guest ID for anonymous users
         order_number: orderNumber,
         status: "pending",
         subtotal: currentTotal,
@@ -264,20 +284,17 @@ export default function CheckoutPage() {
         billing_state: form.sameAsShipping ? form.shippingProvince : form.billingProvince,
         billing_postal_code: form.sameAsShipping ? form.shippingPostalCode : form.billingPostalCode,
         billing_country: 'PK',
-        notes: form.notes,
+        customer_email: form.customerEmail,
+        customer_phone: form.customerPhone,
+        notes: form.notes || null,
       }
       
       // Fallback shipping address for older schema compatibility
       const shippingAddress = `${form.shippingFirstName} ${form.shippingLastName}\n${form.shippingAddressLine1}${form.shippingAddressLine2 ? '\n' + form.shippingAddressLine2 : ''}\n${form.shippingCityName}, ${form.shippingProvince} ${form.shippingPostalCode}\nPakistan`
       orderData.shipping_address = shippingAddress
 
-      const { data: order, error: orderError } = await supabase.from("orders").insert(orderData).select().single()
-
-      if (orderError) throw orderError
-
-      // Create order items
+      // Prepare order items (without order_id, will be added by API)
       const orderItems = currentItems.map((item) => ({
-        order_id: order.id,
         product_id: item.product_id || item.product?.id,
         product_name: item.product?.name || item.product_name,
         product_sku: item.product?.sku || item.product_sku || '',
@@ -286,9 +303,26 @@ export default function CheckoutPage() {
         total_price: (item.product?.price || item.unit_price) * item.quantity,
       }))
 
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+      // Create order via API (bypasses RLS for guest users)
+      setCheckoutProgress({open: true, status: 'loading', message: 'Creating your order...', progress: 30})
+      
+      console.log('Creating order via API:', { orderData, orderItems })
+      const orderResponse = await fetch('/api/public/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderData, orderItems }),
+      })
 
-      if (itemsError) throw itemsError
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json()
+        console.error('Order API failed:', errorData)
+        throw new Error(errorData.error || 'Failed to create order via API')
+      }
+
+      const { order } = await orderResponse.json()
+      console.log('Order created successfully via API:', order)
 
       // Create payment request with order ID
       const paymentRequest: PaymentRequest = {
@@ -296,8 +330,8 @@ export default function CheckoutPage() {
         currency: 'PKR',
         orderId: order.id,
         orderNumber: order.order_number,
-        customerEmail: user.email || '',
-        customerPhone: user.phone || '',
+        customerEmail: form.customerEmail,
+        customerPhone: form.customerPhone,
         shippingAddress: {
           name: `${form.shippingFirstName} ${form.shippingLastName}`,
           address: `${form.shippingAddressLine1} ${form.shippingAddressLine2}`.trim(),
@@ -318,50 +352,45 @@ export default function CheckoutPage() {
         throw new Error(`Payment validation failed: ${validationErrors.join(', ')}`)
       }
 
-      // Process payment
+      // Process payment based on method
+      setCheckoutProgress({open: true, status: 'loading', message: 'Processing payment...', progress: 60})
+      
       console.log('Processing payment with method:', form.selectedPaymentMethod)
       const paymentResult = await PaymentService.processPayment(form.selectedPaymentMethod, paymentRequest)
 
       if (!paymentResult.success) {
-        // Payment failed - update order status and show error
-        const currentNotes = order.notes || ''
-        const failureNotes = `${currentNotes}\n\n--- PAYMENT FAILED ---\nError: ${paymentResult.error}\nFailed at: ${new Date().toLocaleString('en-PK')}`
-        
-        await supabase
-          .from("orders")
-          .update({ 
-            status: "payment_failed",
-            notes: failureNotes,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", order.id)
-
+        console.error('Payment failed:', paymentResult.error)
         throw new Error(paymentResult.error || 'Payment processing failed')
       }
 
-      // Payment successful - update order with payment details
-      const updateData: any = {
-        status: paymentResult.requiresAction ? "payment_pending" : "confirmed",
-        payment_id: paymentResult.paymentId,
-        transaction_id: paymentResult.transactionId,
-        payment_status: paymentResult.requiresAction ? "pending" : "completed",
-        payment_confirmed_at: !paymentResult.requiresAction ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString()
+      console.log('Payment result:', paymentResult)
+      
+      // Handle different payment types
+      if (paymentResult.requiresAction) {
+        if (paymentResult.actionType === 'verification' && paymentResult.clientSecret) {
+          // For Stripe payments, we need to handle the payment on the frontend
+          // Store the payment intent for Stripe processing
+          localStorage.setItem('stripe_payment_intent', JSON.stringify({
+            clientSecret: paymentResult.clientSecret,
+            orderId: order.id,
+            orderNumber: order.order_number,
+            amount: finalTotalWithPaymentFee,
+            currency: 'PKR',
+            customerEmail: form.customerEmail
+          }))
+          
+          // Redirect to payment processing page
+          router.push(`/checkout/payment?order=${order.order_number}&method=stripe`)
+          return
+        } else if (paymentResult.redirectUrl) {
+          // For JazzCash/EasyPaisa redirects
+          window.location.href = paymentResult.redirectUrl
+          return
+        }
       }
-      
-      // Add payment notes (works for both old and new schema)
-      const currentNotes = order.notes || ''
-      const paymentNotes = currentNotes + (currentNotes ? '\n\n' : '') + 
-        `--- PAYMENT DETAILS ---\nTransaction ID: ${paymentResult.transactionId}\nPayment ID: ${paymentResult.paymentId}\nStatus: ${paymentResult.message}\nProcessed: ${new Date().toLocaleString('en-PK')}`
-      updateData.notes = paymentNotes
-      
-      await supabase
-        .from("orders")
-        .update(updateData)
-        .eq("id", order.id)
 
-      console.log('Payment processed successfully:', paymentResult)
-
+      setCheckoutProgress({open: true, status: 'loading', message: 'Finalizing your order...', progress: 85})
+      
       // Clear cart or remove single item
       if (isSingleItemCheckout && singleCheckoutItem) {
         // For single item checkout, just remove the item from cart
@@ -376,11 +405,24 @@ export default function CheckoutPage() {
         await clearCart()
       }
 
-      // Redirect to success page
-      router.push(`/checkout/success?order=${order.order_number}`)
+      setCheckoutProgress({open: true, status: 'success', message: 'Order placed successfully! Redirecting...', progress: 100})
+      
+      // Show success briefly before redirecting
+      setTimeout(() => {
+        router.push(`/checkout/success?order=${order.order_number}`)
+      }, 1500)
     } catch (error) {
       console.error("Error creating order:", error)
-      // TODO: Show error toast
+      
+      // Show detailed error message to user
+      let errorMessage = "Failed to create order. Please try again."
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      setCheckoutProgress({open: true, status: 'error', message: errorMessage})
     } finally {
       setLoading(false)
     }
@@ -402,8 +444,21 @@ export default function CheckoutPage() {
     )
   }
 
-  if (!user || items.length === 0) {
-    return null
+  // Only redirect if no items in cart (authentication not required for guest checkout)
+  if (!isSingleItemCheckout && items.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">No items to checkout</h1>
+          <p className="text-muted-foreground mb-8">Your cart is empty. Add some products first.</p>
+          <Button asChild>
+            <Link href="/products">Browse Products</Link>
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
@@ -434,6 +489,66 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Checkout Form */}
             <div className="space-y-6">
+              {/* Customer Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contact Information</CardTitle>
+                  <CardDescription>
+                    {user ? 'Your account information' : 'How can we reach you about this order?'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerEmail">Email Address *</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      required
+                      value={form.customerEmail}
+                      onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                      placeholder="your.email@example.com"
+                      disabled={!!user?.email}
+                    />
+                    {!user && (
+                      <p className="text-xs text-muted-foreground">
+                        We'll send your order confirmation and tracking details here
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">Phone Number (Optional)</Label>
+                    <Input
+                      id="customerPhone"
+                      type="tel"
+                      value={form.customerPhone}
+                      onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+                      placeholder="+92 300 1234567"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      For delivery updates and assistance
+                    </p>
+                  </div>
+                  {!user && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="text-blue-600 mt-0.5">
+                          ℹ️
+                        </div>
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Shopping as a guest</p>
+                          <p className="text-blue-700">
+                            Want to save your info and track orders easily? 
+                            <Link href="/auth/sign-up" className="underline font-medium">
+                              Create an account
+                            </Link> - it takes just a minute!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Shipping Address */}
               <Card>
                 <CardHeader>
@@ -961,12 +1076,22 @@ export default function CheckoutPage() {
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={loading || !form.shippingCityId || !form.selectedPaymentMethod}
                   >
-                    {loading ? "Processing..." : (() => {
-                      const finalAmount = form.selectedPaymentMethod 
-                        ? finalTotal + (PaymentService.getPaymentMethodById(form.selectedPaymentMethod, currentTotal)?.fee || 0)
-                        : finalTotal
-                      return `Complete Order - ${PakistanShippingCalculator.formatPakistanCurrency(finalAmount)}`
-                    })()}
+                    {loading ? (
+                      <>
+                        <ButtonSpinner className="mr-2" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4 mr-2" />
+                        {(() => {
+                          const finalAmount = form.selectedPaymentMethod 
+                            ? finalTotal + (PaymentService.getPaymentMethodById(form.selectedPaymentMethod, currentTotal)?.fee || 0)
+                            : finalTotal
+                          return `Complete Order - ${PakistanShippingCalculator.formatPakistanCurrency(finalAmount)}`
+                        })()}
+                      </>
+                    )}
                   </Button>
                   
                   {(!form.shippingCityId || !form.selectedPaymentMethod) && (
@@ -989,6 +1114,21 @@ export default function CheckoutPage() {
       </main>
 
       <Footer />
+      
+      {/* Checkout Progress Dialog */}
+      <ProgressDialog
+        open={checkoutProgress.open}
+        onOpenChange={(open) => setCheckoutProgress(prev => ({...prev, open}))}
+        title="Processing Your Order"
+        status={checkoutProgress.status}
+        message={checkoutProgress.message}
+        progress={checkoutProgress.progress}
+        showCloseButton={checkoutProgress.status === 'error'}
+        onClose={() => {
+          setCheckoutProgress({open: false, status: 'loading'})
+          setLoading(false)
+        }}
+      />
     </div>
   )
 }

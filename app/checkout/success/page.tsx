@@ -94,9 +94,11 @@ export default function CheckoutSuccessPage() {
           {/* Actions */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="/account/orders">View Order Details</Link>
-              </Button>
+              {orderNumber && (
+                <Button size="lg" asChild>
+                  <Link href={`/order/${orderNumber}`}>View Order Details</Link>
+                </Button>
+              )}
               <Button size="lg" variant="outline" asChild>
                 <Link href="/products">Continue Shopping</Link>
               </Button>

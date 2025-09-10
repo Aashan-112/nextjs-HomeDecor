@@ -13,14 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { LoadingSpinner, ButtonSpinner } from "@/components/ui/loading-spinner"
+import { ProgressDialog } from "@/components/ui/progress-dialog"
 import { ArrowLeft, Package, User, CreditCard, MapPin, Truck, CheckCircle, FileText, Mail, Printer, ExternalLink, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import type { Order, OrderItem } from "@/lib/types"
 import { toast } from "sonner"
 
+interface OrderItemWithProduct extends OrderItem {
+  products?: {
+    name: string
+    images: string[]
+  }
+}
+
 interface OrderWithItems extends Order {
-  order_items: OrderItem[]
+  order_items: OrderItemWithProduct[]
 }
 
 export default function AdminOrderDetailPage() {
@@ -32,6 +41,11 @@ export default function AdminOrderDetailPage() {
   const [notes, setNotes] = useState("")
   const [sendingEmail, setSendingEmail] = useState(false)
   const [printingLabel, setPrintingLabel] = useState(false)
+  const [showCustomerProfile, setShowCustomerProfile] = useState(false)
+  const [customerProfileData, setCustomerProfileData] = useState<any>(null)
+  const [loadingCustomerProfile, setLoadingCustomerProfile] = useState(false)
+  const [emailProgress, setEmailProgress] = useState<{open: boolean, status: 'loading' | 'success' | 'error', message?: string}>({open: false, status: 'loading'})
+  const [printProgress, setPrintProgress] = useState<{open: boolean, status: 'loading' | 'success' | 'error', message?: string}>({open: false, status: 'loading'})
 
   useEffect(() => {
     console.log('🚀 [ORDER DETAIL] useEffect triggered with params:', params)
@@ -63,7 +77,7 @@ export default function AdminOrderDetailPage() {
           
           console.log('🔍 [ORDER DETAIL] Racing auth call against timeout...')
           
-          let authResult
+          let authResult: any
           try {
             authResult = await Promise.race([authPromise, authTimeout])
           } catch (timeoutError) {
@@ -92,7 +106,7 @@ export default function AdminOrderDetailPage() {
                 
               console.log('🔍 [ORDER DETAIL] Racing direct query against timeout...')
               
-              let queryResult
+              let queryResult: any
               try {
                 queryResult = await Promise.race([directQueryPromise, directQueryTimeout])
               } catch (queryTimeoutError) {
@@ -119,7 +133,7 @@ export default function AdminOrderDetailPage() {
                 }
               }
               
-              const { data, error } = queryResult
+              const { data, error } = queryResult as any
               
               console.log('📊 [ORDER DETAIL] Direct fetch completed:')
               console.log('  - Has data:', !!data)
@@ -178,7 +192,7 @@ export default function AdminOrderDetailPage() {
             }
           }
         
-          const { data: { user }, error: authError } = authResult
+          const { data: { user }, error: authError } = authResult as any
           
           console.log('🔐 [ORDER DETAIL] Auth check result:')
           console.log('  - User exists:', !!user)
@@ -316,11 +330,15 @@ export default function AdminOrderDetailPage() {
     if (!order) return
 
     setSendingEmail(true)
+    setEmailProgress({open: true, status: 'loading', message: 'Preparing email...'})
+    
     try {
       // Create email content based on order status
       const customerName = `${order.shipping_first_name} ${order.shipping_last_name}`
       const orderNumber = order.order_number
       const status = order.status
+      
+      setEmailProgress({open: true, status: 'loading', message: 'Sending email to customer...'})
       
       const response = await fetch('/api/admin/orders/send-status-email', {
         method: 'POST',
@@ -340,9 +358,17 @@ export default function AdminOrderDetailPage() {
         throw new Error('Failed to send email')
       }
 
+      setEmailProgress({open: true, status: 'success', message: 'Email sent successfully!'})
       toast.success(`Status email sent to customer`)
+      
+      // Auto-close success dialog after 2 seconds
+      setTimeout(() => {
+        setEmailProgress({open: false, status: 'loading'})
+      }, 2000)
+      
     } catch (error) {
       console.error('Error sending status email:', error)
+      setEmailProgress({open: true, status: 'error', message: 'Failed to send email. Please try again.'})
       toast.error('Failed to send status email')
     } finally {
       setSendingEmail(false)
@@ -353,6 +379,8 @@ export default function AdminOrderDetailPage() {
     if (!order) return
 
     setPrintingLabel(true)
+    setPrintProgress({open: true, status: 'loading', message: 'Generating shipping label...'})
+    
     try {
       // Generate shipping label data
       const labelData = {
@@ -374,6 +402,8 @@ export default function AdminOrderDetailPage() {
         })) || []
       }
 
+      setPrintProgress({open: true, status: 'loading', message: 'Opening print dialog...'})
+      
       // For now, we'll create a simple print-friendly format
       const printWindow = window.open('', '_blank')
       if (printWindow) {
@@ -420,9 +450,17 @@ export default function AdminOrderDetailPage() {
         printWindow.print()
       }
 
+      setPrintProgress({open: true, status: 'success', message: 'Shipping label opened for printing!'})
       toast.success('Shipping label opened for printing')
+      
+      // Auto-close success dialog after 2 seconds
+      setTimeout(() => {
+        setPrintProgress({open: false, status: 'loading'})
+      }, 2000)
+      
     } catch (error) {
       console.error('Error printing shipping label:', error)
+      setPrintProgress({open: true, status: 'error', message: 'Failed to generate shipping label. Please try again.'})
       toast.error('Failed to generate shipping label')
     } finally {
       setPrintingLabel(false)
@@ -436,6 +474,9 @@ export default function AdminOrderDetailPage() {
 
   const viewCustomerProfile = async () => {
     if (!order?.user_id) return
+    
+    setLoadingCustomerProfile(true)
+    setShowCustomerProfile(true)
     
     try {
       // Fetch customer data via API
@@ -457,33 +498,22 @@ export default function AdminOrderDetailPage() {
           .filter((order: any) => order.status !== 'cancelled')
           .reduce((total: number, order: any) => total + order.total_amount, 0)
         
-        const customerInfo = `
-          Customer Profile
-          ================
-          Name: ${customerName}
-          Customer ID: ${customer.id}
-          Role: ${customer.role}
-          Phone: ${customer.phone || 'Not provided'}
-          
-          Account Info:
-          Member since: ${new Date(customer.created_at).toLocaleDateString()}
-          Total orders: ${orders.length}
-          Total spent: $${totalSpent.toFixed(2)}
-          
-          Recent Orders:
-          ${orders.slice(0, 3).map((order: any) => 
-            `• #${order.order_number} - ${order.status} - $${order.total_amount.toFixed(2)} (${new Date(order.created_at).toLocaleDateString()})`
-          ).join('\n          ')}
-          ${orders.length > 3 ? `\n          ... and ${orders.length - 3} more orders` : ''}
-        `
-        
-        alert(customerInfo)
+        setCustomerProfileData({
+          customer,
+          orders,
+          customerName,
+          totalSpent
+        })
       } else {
         toast.error('Failed to load customer profile')
+        setShowCustomerProfile(false)
       }
     } catch (error) {
       console.error('Error fetching customer profile:', error)
       toast.error('Failed to load customer profile')
+      setShowCustomerProfile(false)
+    } finally {
+      setLoadingCustomerProfile(false)
     }
   }
 
@@ -604,7 +634,7 @@ export default function AdminOrderDetailPage() {
                   disabled={updating || sendingEmail}
                   onClick={sendStatusEmail}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
+                  {sendingEmail ? <ButtonSpinner className="mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
                   {sendingEmail ? 'Sending...' : 'Send Status Email'}
                 </Button>
                 <Button 
@@ -612,7 +642,7 @@ export default function AdminOrderDetailPage() {
                   disabled={updating || printingLabel}
                   onClick={printShippingLabel}
                 >
-                  <Printer className="h-4 w-4 mr-2" />
+                  {printingLabel ? <ButtonSpinner className="mr-2" /> : <Printer className="h-4 w-4 mr-2" />}
                   {printingLabel ? 'Generating...' : 'Print Shipping Label'}
                 </Button>
               </div>
@@ -706,15 +736,32 @@ export default function AdminOrderDetailPage() {
                     <p className="font-medium">
                       {order.shipping_first_name} {order.shipping_last_name}
                     </p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="p-0 h-auto text-xs"
-                      onClick={viewCustomerProfile}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View Customer Profile
-                    </Button>
+                    
+                    {/* Show contact info for guest orders */}
+                    {!order.user_id && (
+                      <div className="space-y-1 text-muted-foreground">
+                        <p className="text-xs font-medium text-orange-600">Guest Order</p>
+                        {order.customer_email && (
+                          <p>Email: {order.customer_email}</p>
+                        )}
+                        {order.customer_phone && (
+                          <p>Phone: {order.customer_phone}</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Show profile button only for registered users */}
+                    {order.user_id && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-0 h-auto text-xs"
+                        onClick={viewCustomerProfile}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View Customer Profile
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -798,6 +845,133 @@ export default function AdminOrderDetailPage() {
           </div>
         </div>
       </main>
+      
+      {/* Customer Profile Dialog */}
+      <Dialog open={showCustomerProfile} onOpenChange={setShowCustomerProfile}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Customer Profile</DialogTitle>
+          </DialogHeader>
+          {loadingCustomerProfile ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <LoadingSpinner size="lg" text="Loading customer profile..." />
+            </div>
+          ) : customerProfileData && (
+            <div className="space-y-6">
+              {/* Customer Info */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Name</Label>
+                    <p className="text-sm">{customerProfileData.customerName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Customer ID</Label>
+                    <p className="text-xs font-mono bg-muted p-1 rounded">{customerProfileData.customer.id}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                    <p className="text-sm">{customerProfileData.customer.email || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                    <p className="text-sm">{customerProfileData.customer.phone || 'Not provided'}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Role</Label>
+                    <Badge variant="outline">{customerProfileData.customer.role}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Member Since</Label>
+                    <p className="text-sm">{new Date(customerProfileData.customer.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Order Stats */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Order Statistics</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Total Orders</Label>
+                    <p className="text-lg font-semibold">{customerProfileData.orders.length}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Total Spent</Label>
+                    <p className="text-lg font-semibold">${customerProfileData.totalSpent.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Recent Orders */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Recent Orders</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {customerProfileData.orders.slice(0, 5).map((order: any) => (
+                    <div key={order.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                      <div>
+                        <Link 
+                          href={`/admin/orders/${order.id}`}
+                          className="font-medium text-sm hover:underline"
+                          onClick={() => setShowCustomerProfile(false)}
+                        >
+                          #{order.order_number}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={getStatusBadgeVariant(order.status)} className="text-xs">
+                          {order.status}
+                        </Badge>
+                        <p className="text-sm font-medium">${order.total_amount.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {customerProfileData.orders.length > 5 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      ... and {customerProfileData.orders.length - 5} more orders
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Email Progress Dialog */}
+      <ProgressDialog
+        open={emailProgress.open}
+        onOpenChange={(open) => setEmailProgress(prev => ({...prev, open}))}
+        title="Sending Status Email"
+        status={emailProgress.status}
+        message={emailProgress.message}
+        showCloseButton={emailProgress.status !== 'loading'}
+        onClose={() => setEmailProgress({open: false, status: 'loading'})}
+      />
+      
+      {/* Print Progress Dialog */}
+      <ProgressDialog
+        open={printProgress.open}
+        onOpenChange={(open) => setPrintProgress(prev => ({...prev, open}))}
+        title="Printing Shipping Label"
+        status={printProgress.status}
+        message={printProgress.message}
+        showCloseButton={printProgress.status !== 'loading'}
+        onClose={() => setPrintProgress({open: false, status: 'loading'})}
+      />
     </div>
   )
 }

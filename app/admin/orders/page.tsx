@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { Button } from "@/components/ui/button"
+import { ButtonSpinner } from "@/components/ui/loading-spinner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +19,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function fetchOrders() {
@@ -56,6 +58,8 @@ export default function AdminOrdersPage() {
   })
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingOrders(prev => new Set(prev).add(orderId))
+    
     try {
       const response = await fetch('/api/admin/orders', {
         method: 'PATCH',
@@ -72,9 +76,15 @@ export default function AdminOrdersPage() {
       }
 
       const updatedOrder = await response.json()
-      setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)))
+      setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus as Order['status'] } : o)))
     } catch (error) {
       console.error("Error updating order status:", error)
+    } finally {
+      setUpdatingOrders(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(orderId)
+        return newSet
+      })
     }
   }
 
@@ -225,9 +235,19 @@ export default function AdminOrdersPage() {
                             size="sm"
                             className="justify-start bg-transparent"
                             onClick={() => updateOrderStatus(order.id, "processing")}
+                            disabled={updatingOrders.has(order.id)}
                           >
-                            <Package className="h-3 w-3 mr-2" />
-                            Mark Processing
+                            {updatingOrders.has(order.id) ? (
+                              <>
+                                <ButtonSpinner className="mr-2" />
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <Package className="h-3 w-3 mr-2" />
+                                Mark Processing
+                              </>
+                            )}
                           </Button>
                         )}
 
@@ -237,9 +257,19 @@ export default function AdminOrdersPage() {
                             size="sm"
                             className="justify-start bg-transparent"
                             onClick={() => updateOrderStatus(order.id, "shipped")}
+                            disabled={updatingOrders.has(order.id)}
                           >
-                            <Truck className="h-3 w-3 mr-2" />
-                            Mark Shipped
+                            {updatingOrders.has(order.id) ? (
+                              <>
+                                <ButtonSpinner className="mr-2" />
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <Truck className="h-3 w-3 mr-2" />
+                                Mark Shipped
+                              </>
+                            )}
                           </Button>
                         )}
 
@@ -249,9 +279,19 @@ export default function AdminOrdersPage() {
                             size="sm"
                             className="justify-start bg-transparent"
                             onClick={() => updateOrderStatus(order.id, "delivered")}
+                            disabled={updatingOrders.has(order.id)}
                           >
-                            <Package className="h-3 w-3 mr-2" />
-                            Mark Delivered
+                            {updatingOrders.has(order.id) ? (
+                              <>
+                                <ButtonSpinner className="mr-2" />
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <Package className="h-3 w-3 mr-2" />
+                                Mark Delivered
+                              </>
+                            )}
                           </Button>
                         )}
                       </div>

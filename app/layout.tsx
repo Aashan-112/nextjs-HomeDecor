@@ -6,6 +6,7 @@ import "./globals.css"
 import { CartProvider } from "@/contexts/cart-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { WishlistProvider } from "@/contexts/wishlist-context"
+import { AuthPromptProvider } from "@/components/auth/auth-prompt-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { Toaster as CustomToaster } from "@/components/ui/toaster"
 
@@ -26,7 +27,11 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <AuthProvider>
           <CartProvider>
-            <WishlistProvider>{children}</WishlistProvider>
+            <WishlistProvider>
+              <AuthPromptProvider>
+                {children}
+              </AuthPromptProvider>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
         <Toaster richColors closeButton position="top-right" />

@@ -15,6 +15,9 @@ import { Search, Filter, X, RefreshCw, Bell } from "lucide-react"
 import { getProducts, getCategories as getHybridCategories } from "@/lib/data/data-sync"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStream } from "@/hooks/use-product-stream"
+import { AnimatedContainer } from "@/components/ui/animated-container"
+import { StaggerContainer } from "@/components/ui/stagger-container"
+import { PageTransition } from "@/components/ui/page-transition"
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -269,20 +272,21 @@ export default function ProductsPage() {
   ].filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PageTransition>
+      <div className="min-h-screen bg-background">
+        <Header />
 
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        <AnimatedContainer animation="slideDown" delay={100} className="mb-8">
           <div className="flex justify-between items-start mb-4">
-            <div>
+            <StaggerContainer className="space-y-2" staggerDelay={200} initialDelay={300}>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">All Products</h1>
               <p className="text-lg text-muted-foreground">
                 Discover our complete collection of handcrafted home decor pieces
               </p>
-            </div>
-            <div className="flex items-center gap-2">
+            </StaggerContainer>
+            <AnimatedContainer animation="slideLeft" delay={800} className="flex items-center gap-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className={`w-2 h-2 rounded-full ${
@@ -299,67 +303,90 @@ export default function ProductsPage() {
                 </span>
               </div>
               
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                className="text-xs"
+              <StaggerContainer 
+                className="flex items-center gap-2" 
+                staggerDelay={100} 
+                initialDelay={1000}
+                animation="scale"
               >
-                {autoRefreshEnabled ? '⏸️ Pause' : '▶️ Resume'} Auto-refresh
-              </Button>
-              
-              <Button 
-                variant={hasNewProducts ? "default" : "outline"} 
-                onClick={forceRefreshProducts} 
-                disabled={loading}
-                className={hasNewProducts ? "animate-pulse shadow-lg" : ""}
-              >
-                {hasNewProducts && <Bell className="h-4 w-4 mr-2 animate-bounce" />}
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Refreshing...' : hasNewProducts ? 'View New Products!' : 'Refresh'}
-              </Button>
-              
-              <Button variant="ghost" onClick={() => {
-                setProducts([])
-                setCategories([])
-                clearAllFilters()
-                window.location.reload()
-              }}>
-                Hard Reset
-              </Button>
-            </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                  className="text-xs hover-scale transition-all"
+                >
+                  {autoRefreshEnabled ? '⏸️ Pause' : '▶️ Resume'} Auto-refresh
+                </Button>
+                
+                <Button 
+                  variant={hasNewProducts ? "default" : "outline"} 
+                  onClick={forceRefreshProducts} 
+                  disabled={loading}
+                  className={`hover-lift transition-all ${hasNewProducts ? "animate-pulse shadow-lg hover-glow" : ""}`}
+                >
+                  {hasNewProducts && <Bell className="h-4 w-4 mr-2 animate-bounce" />}
+                  <RefreshCw className={`h-4 w-4 mr-2 transition-transform ${loading ? 'animate-spin' : ''}`} />
+                  {loading ? 'Refreshing...' : hasNewProducts ? 'View New Products!' : 'Refresh'}
+                </Button>
+                
+                <Button variant="ghost" className="hover-scale transition-all" onClick={() => {
+                  setProducts([])
+                  setCategories([])
+                  clearAllFilters()
+                  window.location.reload()
+                }}>
+                  Hard Reset
+                </Button>
+              </StaggerContainer>
+            </AnimatedContainer>
           </div>
-        </div>
+        </AnimatedContainer>
 
         {/* Filters */}
-        <div className="mb-8 space-y-4">
+        <AnimatedContainer animation="slideUp" delay={500} className="mb-8 space-y-4">
           {/* Search and Filter Toggle */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <StaggerContainer 
+            className="flex flex-col sm:flex-row gap-4" 
+            staggerDelay={200} 
+            initialDelay={200}
+            animation="slideUp"
+          >
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
               <Input
                 type="search"
                 placeholder="Search products..."
-                className="pl-10"
+                className="pl-10 hover-glow focus:scale-[1.02] transition-all duration-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="sm:w-auto">
-              <Filter className="h-4 w-4 mr-2" />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFilters(!showFilters)} 
+              className="sm:w-auto hover-lift transition-all duration-300"
+            >
+              <Filter className={`h-4 w-4 mr-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
             </Button>
-          </div>
+          </StaggerContainer>
 
           {showFilters && (
-            <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <AnimatedContainer 
+              animation="slideDown" 
+              className="border rounded-lg p-4 space-y-4 bg-muted/20 hover:bg-muted/30 transition-colors"
+            >
+              <StaggerContainer 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
+                staggerDelay={100} 
+                animation="slideUp"
+              >
                 {/* Category Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Category</label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
+                    <SelectTrigger className="hover-glow focus:scale-[1.02] transition-all">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
@@ -377,7 +404,7 @@ export default function ProductsPage() {
                 <div>
                   <label className="text-sm font-medium mb-2 block">Price Range</label>
                   <Select value={priceRange} onValueChange={setPriceRange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="hover-glow focus:scale-[1.02] transition-all">
                       <SelectValue placeholder="All Prices" />
                     </SelectTrigger>
                     <SelectContent>
@@ -394,7 +421,7 @@ export default function ProductsPage() {
                 <div>
                   <label className="text-sm font-medium mb-2 block">Sort By</label>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger>
+                    <SelectTrigger className="hover-glow focus:scale-[1.02] transition-all">
                       <SelectValue placeholder="Sort By" />
                     </SelectTrigger>
                     <SelectContent>
@@ -414,16 +441,21 @@ export default function ProductsPage() {
                       id="in-stock"
                       checked={showInStockOnly}
                       onCheckedChange={(checked) => setShowInStockOnly(checked === true)}
+                      className="hover-scale transition-transform"
                     />
                     <label htmlFor="in-stock" className="text-sm">
                       In Stock Only
                     </label>
                   </div>
                 </div>
-              </div>
+              </StaggerContainer>
 
               {/* Material and Color Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <StaggerContainer 
+                className="grid grid-cols-1 md:grid-cols-2 gap-4" 
+                staggerDelay={150} 
+                animation="slideUp"
+              >
                 {/* Materials */}
                 {availableMaterials.length > 0 && (
                   <div>
@@ -433,7 +465,7 @@ export default function ProductsPage() {
                         <Badge
                           key={material}
                           variant={selectedMaterials.includes(material) ? "default" : "outline"}
-                          className="cursor-pointer hover:bg-accent"
+                          className="cursor-pointer hover:bg-accent hover-scale transition-all"
                           onClick={() => toggleMaterial(material)}
                         >
                           {material}
@@ -452,7 +484,7 @@ export default function ProductsPage() {
                         <Badge
                           key={color}
                           variant={selectedColors.includes(color) ? "default" : "outline"}
-                          className="cursor-pointer hover:bg-accent"
+                          className="cursor-pointer hover:bg-accent hover-scale transition-all"
                           onClick={() => toggleColor(color)}
                         >
                           {color}
@@ -461,27 +493,31 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </StaggerContainer>
 
               {/* Clear Filters */}
               {activeFiltersCount > 0 && (
-                <div className="flex justify-end">
-                  <Button variant="ghost" onClick={clearAllFilters}>
-                    <X className="h-4 w-4 mr-2" />
+                <AnimatedContainer animation="fade" delay={200} className="flex justify-end">
+                  <Button variant="ghost" className="hover-lift transition-all" onClick={clearAllFilters}>
+                    <X className="h-4 w-4 mr-2 transition-transform hover:rotate-90" />
                     Clear All Filters
                   </Button>
-                </div>
+                </AnimatedContainer>
               )}
-            </div>
+            </AnimatedContainer>
           )}
 
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <StaggerContainer 
+              className="flex flex-wrap gap-2" 
+              staggerDelay={50} 
+              animation="scale"
+            >
               {searchQuery && (
-                <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                <Badge variant="secondary" className="bg-accent text-accent-foreground hover-scale transition-all">
                   Search: "{searchQuery}"
-                  <button onClick={() => setSearchQuery("")} className="ml-2 hover:text-accent-foreground/80">
+                  <button onClick={() => setSearchQuery("")} className="ml-2 hover:text-accent-foreground/80 transition-colors">
                     ×
                   </button>
                 </Badge>
@@ -526,12 +562,12 @@ export default function ProductsPage() {
                   </button>
                 </Badge>
               )}
-            </div>
+            </StaggerContainer>
           )}
-        </div>
+        </AnimatedContainer>
 
         {/* Results */}
-        <div className="mb-6 space-y-2">
+        <AnimatedContainer animation="slideUp" delay={700} className="mb-6 space-y-2">
           {errorMessage ? (
             <p className="text-red-600">Failed to load products: {errorMessage}</p>
           ) : (
@@ -558,39 +594,49 @@ export default function ProductsPage() {
               </button>
             </div>
           </details>
-        </div>
+        </AnimatedContainer>
 
         {/* Products Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <StaggerContainer 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+            staggerDelay={50} 
+            animation="scale"
+          >
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                <Skeleton className="aspect-[4/3] w-full rounded-lg animate-shimmer" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-3/4 animate-shimmer" />
+                  <Skeleton className="h-4 w-1/2 animate-shimmer" />
+                  <Skeleton className="h-10 w-full animate-shimmer" />
                 </div>
               </div>
             ))}
-          </div>
+          </StaggerContainer>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <StaggerContainer 
+            key={filteredProducts.length} // Force re-render when products change
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+            staggerDelay={100} 
+            animation="slideUp"
+          >
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
+          </StaggerContainer>
         ) : (
-          <div className="text-center py-12">
+          <AnimatedContainer animation="scale" className="text-center py-12">
             <p className="text-lg text-muted-foreground mb-4">No products found matching your criteria</p>
-            <Button variant="outline" onClick={clearAllFilters}>
+            <Button variant="outline" className="hover-lift transition-all" onClick={clearAllFilters}>
               Clear Filters
             </Button>
-          </div>
+          </AnimatedContainer>
         )}
       </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </PageTransition>
   )
 }
