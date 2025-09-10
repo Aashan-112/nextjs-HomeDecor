@@ -21,6 +21,7 @@ export function NewsletterSignup() {
     }
 
     setIsSubscribing(true)
+<<<<<<< HEAD
     try {
       const res = await fetch('/api/public/subscribe', {
         method: 'POST',
@@ -43,6 +44,15 @@ export function NewsletterSignup() {
     } finally {
       setIsSubscribing(false)
     }
+=======
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast.success("Welcome! Check your email for your 15% discount code 🎉")
+      setEmail("")
+      setIsSubscribing(false)
+    }, 1000)
+>>>>>>> 1a1b3af679ca5f65d7b3dad00eaec278de7b7316
   }
 
   return (

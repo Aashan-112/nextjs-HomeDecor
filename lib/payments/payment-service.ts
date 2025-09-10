@@ -232,7 +232,11 @@ export class PaymentService {
       console.error('Stripe payment error:', error)
       return {
         success: false,
+<<<<<<< HEAD
         error: error.message || 'Credit card payment failed. Please try again.',
+=======
+        error: 'Credit card payment failed. Please try again.',
+>>>>>>> 1a1b3af679ca5f65d7b3dad00eaec278de7b7316
         message: 'Payment processing failed. Please check your card details and try again.'
       }
     }
