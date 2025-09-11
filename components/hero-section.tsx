@@ -19,12 +19,12 @@ export function HeroSection() {
                 Handcrafted Excellence
               </Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight text-balance">
-                Arts & Crafts
+                99 Arts and Crafts
                 <span className="text-accent block">Made with Love</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-md text-pretty">
                 Discover unique handcrafted mirrors and home accessories. Each piece is carefully crafted by skilled
-                Arts & Crafts using traditional techniques and premium materials.
+                artisans using traditional techniques and premium materials.
               </p>
             </StaggerContainer>
 

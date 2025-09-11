@@ -7,19 +7,19 @@ export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left justify-items-center md:justify-items-start">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center md:justify-start space-x-2">
               <div className="h-8 w-8 bg-accent rounded-full flex items-center justify-center">
                 <span className="text-accent-foreground font-bold text-sm">A</span>
               </div>
-              <span className="font-bold text-xl">Arts & Crafts</span>
+              <span className="font-bold text-xl">99 Arts and Crafts</span>
             </div>
             <p className="text-primary-foreground/80 text-sm text-pretty">
               Handcrafted home decor pieces made with love and traditional techniques. Each item tells a unique story.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex justify-center md:justify-start space-x-4">
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:text-accent" asChild>
                 <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer">
                   <Facebook className="h-4 w-4" />
@@ -41,7 +41,7 @@ export function Footer() {
           {/* Quick Links */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Quick Links</h3>
-            <nav className="flex flex-col space-y-2">
+            <nav className="flex flex-col items-center md:items-start space-y-2">
               <Link href="/products" className="text-primary-foreground/80 hover:text-accent transition-colors text-sm">
                 All Products
               </Link>
@@ -66,7 +66,7 @@ export function Footer() {
           {/* Customer Service */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Customer Service</h3>
-            <nav className="flex flex-col space-y-2">
+            <nav className="flex flex-col items-center md:items-start space-y-2">
               <Link href="/shipping" className="text-primary-foreground/80 hover:text-accent transition-colors text-sm">
                 Shipping Info
               </Link>
@@ -89,7 +89,7 @@ export function Footer() {
           </div>
 
           {/* Newsletter */}
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-sm w-full mx-auto">
             <h3 className="font-semibold text-lg">Stay Updated</h3>
             <p className="text-primary-foreground/80 text-sm">
               Subscribe to get updates on new arrivals and exclusive offers.
@@ -105,15 +105,15 @@ export function Footer() {
 
             {/* Contact Info */}
             <div className="space-y-2 pt-4">
-              <div className="flex items-center space-x-2 text-sm text-primary-foreground/80">
+              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-primary-foreground/80">
                 <Mail className="h-4 w-4" />
-                <span>hello@Arts & Crafts.com</span>
+                <span>hello@99artsandcrafts.com</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-primary-foreground/80">
+              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-primary-foreground/80">
                 <Phone className="h-4 w-4" />
                 <span>+92 300 123 4567</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-primary-foreground/80">
+              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-primary-foreground/80">
                 <MapPin className="h-4 w-4" />
                 <span>New York, NY</span>
               </div>
@@ -122,7 +122,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center">
-          <p className="text-primary-foreground/60 text-sm">© 2024 Arts & Crafts Home Decor. All rights reserved.</p>
+          <p className="text-primary-foreground/60 text-sm">© 2024 99 Arts and Crafts. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { AnimatedContainer } from "@/components/ui/animated-container"
 import { StaggerContainer } from "@/components/ui/stagger-container"
+import { CardStackCarousel } from "@/components/ui/card-stack-carousel"
 
 const steps = [
   {
@@ -67,8 +68,9 @@ export function HowItWorks() {
         </AnimatedContainer>
 
         <div className="max-w-5xl mx-auto">
+          {/* Desktop Grid */}
           <StaggerContainer 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6"
             staggerDelay={200}
             initialDelay={400}
             animation="slideUp"
@@ -111,6 +113,44 @@ export function HowItWorks() {
               </div>
             ))}
           </StaggerContainer>
+
+          {/* Mobile Card Stack Carousel */}
+          <div className="md:hidden">
+            <CardStackCarousel 
+              autoPlay={true} 
+              autoPlayInterval={7000}
+              cardWidth={260}
+              minCardHeight={260}
+              className="py-4"
+            >
+              {steps.map((step, index) => (
+                <Card key={index} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur h-full">
+                  <CardContent className="p-5 text-center relative h-full flex flex-col">
+                    {/* Step Number Badge */}
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center bg-accent text-accent-foreground font-bold text-xs hover-scale"
+                    >
+                      {step.step}
+                    </Badge>
+
+                    {/* Icon with Gradient Background */}
+                    <div className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                      <step.icon className="h-8 w-8 text-accent" />
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
+                      {step.title}
+                    </h3>
+
+                    <p className="text-muted-foreground text-xs leading-relaxed flex-grow">
+                      {step.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </CardStackCarousel>
+          </div>
         </div>
 
         {/* Call to Action */}

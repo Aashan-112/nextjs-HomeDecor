@@ -363,7 +363,7 @@ export default function EditProductPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Price *</Label>
                   <Input
@@ -398,7 +398,7 @@ export default function EditProductPage() {
               <CardDescription>Manage stock and categorization</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU *</Label>
                   <Input
@@ -615,7 +615,7 @@ export default function EditProductPage() {
               <CardDescription>Update weight and dimensions</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight (lbs)</Label>
                   <Input

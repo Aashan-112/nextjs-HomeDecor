@@ -11,9 +11,9 @@ import { Toaster } from "@/components/ui/sonner"
 import { Toaster as CustomToaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: "Arts & Crafts Home Decor - Handcrafted Mirrors & Home Accessories",
+  title: "99 Arts and Crafts - Handcrafted Mirrors & Home Accessories",
   description:
-    "Discover unique handcrafted home decor pieces including mirrors, wall art, and accessories. Premium quality Arts & Crafts-made items for your home.",
+    "Discover unique handcrafted home decor pieces including mirrors, wall art, and accessories. Premium quality items for your home from 99 Arts and Crafts.",
   generator: "v0.app",
 }
 

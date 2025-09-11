@@ -50,7 +50,7 @@ export function CategoriesPreview() {
         </AnimatedContainer>
 
         <StaggerContainer 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
           staggerDelay={150}
           initialDelay={400}
           animation="slideUp"
@@ -69,21 +69,21 @@ export function CategoriesPreview() {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
-                        <Sparkles className="h-12 w-12 text-accent/60" />
+                        <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 text-accent/60" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-4 left-4 right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
-                      <h3 className="font-semibold text-lg mb-1">{category.name}</h3>
-                      <p className="text-sm text-white/80">{category.description || "Handcrafted pieces"}</p>
+                    <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
+                      <h3 className="font-semibold text-sm sm:text-lg mb-1">{category.name}</h3>
+                      <p className="text-xs sm:text-sm text-white/80 hidden sm:block">{category.description || "Handcrafted pieces"}</p>
                     </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-2 sm:p-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
+                      <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors text-sm sm:text-base">
                         {category.name}
                       </h3>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
                     </div>
                   </div>
                 </CardContent>

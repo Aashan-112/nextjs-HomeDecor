@@ -75,19 +75,19 @@ interface ProductCardProps {
             </AspectRatio>
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 flex flex-col gap-1 sm:gap-2">
             {product.is_featured && (
-              <Badge variant="secondary" className="bg-accent text-accent-foreground hover-scale animate-fadeInLeft animate-delay-300">
+              <Badge variant="secondary" className="bg-accent text-accent-foreground hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
                 Featured
               </Badge>
             )}
             {hasDiscount && (
-              <Badge variant="destructive" className="bg-black text-white hover-scale animate-fadeInLeft animate-delay-500">
+              <Badge variant="destructive" className="bg-black text-white hover-scale animate-fadeInLeft animate-delay-500 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
                 -{discountPercentage}%
               </Badge>
             )}
             {product.stock_quantity === 0 && (
-              <Badge variant="outline" className="bg-background/90 hover-scale animate-fadeInLeft animate-delay-300">
+              <Badge variant="outline" className="bg-background/90 hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
                 Out of Stock
               </Badge>
             )}
@@ -97,35 +97,35 @@ interface ProductCardProps {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-3 right-3 bg-background/80 hover-scale hover-glow animate-fadeInRight animate-delay-300"
+            className="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 bg-background/80 hover-scale hover-glow animate-fadeInRight animate-delay-300 h-8 w-8 sm:h-10 sm:w-10"
             onClick={handleToggleWishlist}
             disabled={isTogglingWishlist}
             aria-pressed={isInWishlist(product?.id || "")}
             aria-label={isInWishlist(product?.id || "") ? "Remove from wishlist" : "Add to wishlist"}
           >
-          <Heart className={`h-4 w-4 transition-colors ${isInWishlist(product?.id || "") ? "fill-current text-[#f5c6a5] animate-bounce-soft" : ""}`} />
+          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${isInWishlist(product?.id || "") ? "fill-current text-[#f5c6a5] animate-bounce-soft" : ""}`} />
           </Button>
         </div>
 
-        <CardContent className="p-4">
-          <div className="space-y-2">
+        <CardContent className="p-2 sm:p-4">
+          <div className="space-y-1 sm:space-y-2">
             <Link href={`/products/${product.id}`} className="block">
-              <h3 className="font-medium text-foreground hover:text-foreground/80 transition-colors line-clamp-2 hover:underline">
+              <h3 className="font-medium text-foreground hover:text-foreground/80 transition-colors line-clamp-2 hover:underline text-sm sm:text-base">
                 {product.name}
               </h3>
             </Link>
 
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-foreground">${product.price.toFixed(2)}</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-base sm:text-lg font-semibold text-foreground">${product.price.toFixed(2)}</span>
               {hasDiscount && (
-                <span className="text-sm text-muted-foreground line-through">
+                <span className="text-xs sm:text-sm text-muted-foreground line-through">
                   ${product.compare_at_price!.toFixed(2)}
                 </span>
               )}
             </div>
 
             {product.materials.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1 hidden sm:flex">
                 {product.materials.slice(0, 2).map((material, index) => (
                   <Badge key={material} variant="outline" className={`text-xs hover-scale transition-all animate-fadeInUp animate-delay-${(index + 3) * 100}`}>
                     {material}
@@ -136,14 +136,15 @@ interface ProductCardProps {
           </div>
         </CardContent>
 
-        <CardFooter className="p-4 pt-0">
+        <CardFooter className="p-2 sm:p-4 pt-0">
           <Button
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-lift transition-all duration-300"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-lift transition-all duration-300 h-8 sm:h-10 text-sm"
             onClick={handleAddToCart}
             disabled={product.stock_quantity === 0 || isAddingToCart}
           >
-            <ShoppingCart className={`h-4 w-4 mr-2 transition-transform ${isAddingToCart ? "animate-spin" : ""}`} />
-            {isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
+            <ShoppingCart className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 transition-transform ${isAddingToCart ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">{isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}</span>
+            <span className="sm:hidden">{isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out" : "Add"}</span>
           </Button>
         </CardFooter>
       </Card>

@@ -3,7 +3,7 @@
 
 export const BUSINESS_CONFIG = {
   // Business Information
-  business_name: "Arts & Crafts Home Decor",
+  business_name: "99 Arts and Crafts",
   business_type: "Handcrafted Home Accessories & Mirrors",
   
   // Shipping Origin (Your Location)

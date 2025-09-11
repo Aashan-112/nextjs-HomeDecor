@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { AnimatedContainer } from "@/components/ui/animated-container"
 import { StaggerContainer } from "@/components/ui/stagger-container"
+import { CardStackCarousel } from "@/components/ui/card-stack-carousel"
 
 const features = [
   {
@@ -59,7 +60,7 @@ export function WhyChooseUs() {
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <AnimatedContainer animation="slideUp" delay={200}>
-          <div className="text-center mb-12">
+          <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Sparkles className="h-6 w-6 text-accent animate-pulse" />
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">Why Choose Our Crafts?</h2>
@@ -70,8 +71,9 @@ export function WhyChooseUs() {
           </div>
         </AnimatedContainer>
 
+        {/* Desktop Grid */}
         <StaggerContainer 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6"
           staggerDelay={150}
           initialDelay={400}
           animation="slideUp"
@@ -102,6 +104,43 @@ export function WhyChooseUs() {
             </Card>
           ))}
         </StaggerContainer>
+
+        {/* Mobile Card Stack Carousel */}
+        <div className="md:hidden mt-2">
+          <CardStackCarousel 
+            autoPlay={true} 
+            autoPlayInterval={6000}
+            cardWidth={240}
+            minCardHeight={260}
+            className="py-2"
+          >
+            {features.map((feature, index) => (
+              <Card key={index} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur h-full">
+                <CardContent className="p-6 text-center h-full flex flex-col">
+                  <div className="relative mb-4">
+                    <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center mb-3 group-hover:bg-accent/20 transition-colors">
+                      <feature.icon className="h-8 w-8 text-accent group-hover:scale-110 transition-transform" />
+                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute -top-2 -right-2 bg-accent text-accent-foreground hover-scale"
+                    >
+                      {feature.badge}
+                    </Badge>
+                  </div>
+                  
+                  <h3 className="text-xl font-semibold text-foreground mb-3 group-hover:text-accent transition-colors">
+                    {feature.title}
+                  </h3>
+                  
+                  <p className="text-muted-foreground text-sm leading-relaxed flex-grow">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </CardStackCarousel>
+        </div>
 
         {/* Trust Statistics */}
         <AnimatedContainer animation="slideUp" delay={800} className="mt-16">

@@ -59,9 +59,18 @@ export function FeaturedProducts() {
       const data = await getFeaturedProductsHybrid()
       console.log(`✅ Featured products fetched: ${data?.length} products`)
       
+      // Sort by created_at or updated_at to get latest products, then limit to 8
+      const sortedData = data?.sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at)
+        const dateB = new Date(b.updated_at || b.created_at)
+        return dateB.getTime() - dateA.getTime() // Most recent first
+      }).slice(0, 8) || []
+      
+      console.log(`📋 Displaying latest ${sortedData.length} featured products on home page`)
+      
       // Check for new featured products
-      if (silent && data && data.length > products.length) {
-        const newFeaturedCount = data.length - products.length
+      if (silent && sortedData && sortedData.length > products.length) {
+        const newFeaturedCount = sortedData.length - products.length
         console.log('🎉 New featured products detected!')
         
         // Show toast notification for new featured products
@@ -72,7 +81,7 @@ export function FeaturedProducts() {
         })
       }
       
-      setProducts(data || [])
+      setProducts(sortedData)
     } catch (error) {
       console.error("❌ Error fetching featured products:", error)
       if (!silent) setProducts([])
@@ -111,34 +120,36 @@ export function FeaturedProducts() {
 
         {loading ? (
           <StaggerContainer 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" 
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6" 
             staggerDelay={100} 
             animation="scale"
           >
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="space-y-4">
+              <div key={i} className="space-y-2 sm:space-y-4">
                 <Skeleton className="aspect-[4/3] w-full rounded-lg animate-shimmer" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4 animate-shimmer" />
-                  <Skeleton className="h-4 w-1/2 animate-shimmer" />
-                  <Skeleton className="h-10 w-full animate-shimmer" />
+                <div className="space-y-1 sm:space-y-2">
+                  <Skeleton className="h-3 sm:h-4 w-3/4 animate-shimmer" />
+                  <Skeleton className="h-3 sm:h-4 w-1/2 animate-shimmer" />
+                  <Skeleton className="h-8 sm:h-10 w-full animate-shimmer" />
                 </div>
               </div>
             ))}
           </StaggerContainer>
         ) : (
           <>
-            <StaggerContainer 
-              key={products.length} // Force re-render when products change
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12" 
-              staggerDelay={150} 
-              initialDelay={400}
-              animation="slideUp"
-            >
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </StaggerContainer>
+            <AnimatedContainer animation="slideUp" delay={400} className="mb-8">
+              <StaggerContainer 
+                key={products.length}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6" 
+                staggerDelay={150} 
+                initialDelay={100}
+                animation="slideUp"
+              >
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </StaggerContainer>
+            </AnimatedContainer>
 
             {products.length > 0 && (
               <AnimatedContainer animation="scale" delay={800} className="text-center">

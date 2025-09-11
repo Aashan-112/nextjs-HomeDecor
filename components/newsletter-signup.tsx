@@ -21,7 +21,6 @@ export function NewsletterSignup() {
     }
 
     setIsSubscribing(true)
-<<<<<<< HEAD
     try {
       const res = await fetch('/api/public/subscribe', {
         method: 'POST',
@@ -44,15 +43,6 @@ export function NewsletterSignup() {
     } finally {
       setIsSubscribing(false)
     }
-=======
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Welcome! Check your email for your 15% discount code 🎉")
-      setEmail("")
-      setIsSubscribing(false)
-    }, 1000)
->>>>>>> 1a1b3af679ca5f65d7b3dad00eaec278de7b7316
   }
 
   return (
@@ -99,10 +89,9 @@ export function NewsletterSignup() {
                 placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 pl-4 pr-12 bg-background/80 backdrop-blur border-border/50 hover-glow focus:scale-[1.02] transition-all duration-300"
+                className="h-12 pl-4 pr-4 bg-background/80 backdrop-blur border-border/50 hover-glow focus:scale-[1.02] transition-all duration-300"
                 disabled={isSubscribing}
               />
-              <Mail className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             </div>
             <Button 
               type="submit" 

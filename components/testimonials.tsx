@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Star, Quote } from "lucide-react"
 import { AnimatedContainer } from "@/components/ui/animated-container"
 import { StaggerContainer } from "@/components/ui/stagger-container"
+import { ElevatedCarousel } from "@/components/ui/elevated-carousel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Grid3X3, Layers3 } from "lucide-react"
 
 const testimonials = [
   {
@@ -75,59 +78,136 @@ export function Testimonials() {
           </div>
         </AnimatedContainer>
 
-        <StaggerContainer 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
-          staggerDelay={150}
-          initialDelay={400}
-          animation="slideUp"
-        >
-          {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur">
-              <CardContent className="p-6">
-                <Quote className="h-8 w-8 text-accent/30 mb-4 group-hover:text-accent/50 transition-colors" />
-                
-                <blockquote className="text-muted-foreground mb-6 leading-relaxed">
-                  "{testimonial.review}"
-                </blockquote>
+        {/* Display Toggle */}
+        <AnimatedContainer animation="slideUp" delay={400} className="mb-8">
+          <Tabs defaultValue="grid" className="w-full">
+            <div className="flex justify-center mb-6">
+              <TabsList className="bg-background/80 backdrop-blur border border-border/50">
+                <TabsTrigger value="grid" className="flex items-center gap-2">
+                  <Grid3X3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Grid View</span>
+                </TabsTrigger>
+                <TabsTrigger value="elevated" className="flex items-center gap-2">
+                  <Layers3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Spotlight View</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10">
-                    <img 
-                      src={testimonial.image}
-                      alt={testimonial.product}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-foreground">{testimonial.product}</div>
-                    <StarRating rating={testimonial.rating} />
-                  </div>
-                </div>
+            <TabsContent value="grid" className="space-y-8">
+              <StaggerContainer 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                staggerDelay={150}
+                initialDelay={100}
+                animation="slideUp"
+              >
+                {testimonials.map((testimonial) => (
+                  <Card key={testimonial.id} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur">
+                    <CardContent className="p-6">
+                      <Quote className="h-8 w-8 text-accent/30 mb-4 group-hover:text-accent/50 transition-colors" />
+                      
+                      <blockquote className="text-muted-foreground mb-6 leading-relaxed">
+                        "{testimonial.review}"
+                      </blockquote>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
-                      <AvatarFallback className="bg-accent/10 text-accent">
-                        {testimonial.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium text-foreground text-sm">{testimonial.name}</div>
-                      <div className="text-xs text-muted-foreground">{testimonial.location}</div>
-                    </div>
-                  </div>
-                  
-                  {testimonial.verified && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover-scale">
-                      ✓ Verified
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </StaggerContainer>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10">
+                          <img 
+                            src={testimonial.image}
+                            alt={testimonial.product}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-foreground">{testimonial.product}</div>
+                          <StarRating rating={testimonial.rating} />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                            <AvatarFallback className="bg-accent/10 text-accent">
+                              {testimonial.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-foreground text-sm">{testimonial.name}</div>
+                            <div className="text-xs text-muted-foreground">{testimonial.location}</div>
+                          </div>
+                        </div>
+                        
+                        {testimonial.verified && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 hover-scale">
+                            ✓ Verified
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </StaggerContainer>
+            </TabsContent>
+
+            <TabsContent value="elevated" className="space-y-8">
+              <div className="max-w-5xl mx-auto">
+                <ElevatedCarousel 
+                  autoPlay={true} 
+                  autoPlayInterval={8000}
+                  className="py-4"
+                >
+                  {testimonials.map((testimonial) => (
+                    <Card key={testimonial.id} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur mx-2">
+                      <CardContent className="p-6">
+                        <Quote className="h-8 w-8 text-accent/30 mb-4 group-hover:text-accent/50 transition-colors" />
+                        
+                        <blockquote className="text-muted-foreground mb-6 leading-relaxed">
+                          "{testimonial.review}"
+                        </blockquote>
+
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10">
+                            <img 
+                              src={testimonial.image}
+                              alt={testimonial.product}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-foreground">{testimonial.product}</div>
+                            <StarRating rating={testimonial.rating} />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                              <AvatarFallback className="bg-accent/10 text-accent">
+                                {testimonial.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium text-foreground text-sm">{testimonial.name}</div>
+                              <div className="text-xs text-muted-foreground">{testimonial.location}</div>
+                            </div>
+                          </div>
+                          
+                          {testimonial.verified && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 hover-scale">
+                              ✓ Verified
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </ElevatedCarousel>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </AnimatedContainer>
 
         <AnimatedContainer animation="scale" delay={800} className="text-center">
           <div className="inline-flex items-center gap-4 bg-background/80 backdrop-blur rounded-xl px-8 py-4 border border-border/50">

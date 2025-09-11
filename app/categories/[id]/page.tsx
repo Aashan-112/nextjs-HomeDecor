@@ -102,14 +102,14 @@ export default function CategoryPage() {
             <Skeleton className="h-8 w-64 mb-4" />
             <Skeleton className="h-6 w-96" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="aspect-[4/3] w-full rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-10 w-full" />
+                <div className="space-y-1 sm:space-y-2">
+                  <Skeleton className="h-3 sm:h-4 w-3/4" />
+                  <Skeleton className="h-3 sm:h-4 w-1/2" />
+                  <Skeleton className="h-8 sm:h-10 w-full" />
                 </div>
               </div>
             ))}
@@ -200,7 +200,7 @@ export default function CategoryPage() {
 
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

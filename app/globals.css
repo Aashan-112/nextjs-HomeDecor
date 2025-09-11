@@ -189,6 +189,16 @@
     background: rgb(22 163 74);
   }
 
+  /* Mobile Carousel Scrollbar Hide */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Professional Animation Classes */
   .animate-fadeInUp {
     animation: fadeInUp 0.6s ease-out forwards;

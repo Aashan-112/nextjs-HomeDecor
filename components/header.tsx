@@ -35,9 +35,9 @@ export function Header({ cartItemsCount: _cartItemsCount }: HeaderProps) {
           <AnimatedContainer animation="slideRight" delay={100}>
             <Link href="/" className="flex items-center space-x-2 hover-scale transition-all duration-300">
               <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center border border-black overflow-hidden hover-glow">
-                <img src="/logo.webp" alt="Arts & Crafts" className="h-10 w-10 rounded-full object-cover transition-transform hover:scale-110" />
+                <img src="/logo.webp" alt="99 Arts and Crafts" className="h-10 w-10 rounded-full object-cover transition-transform hover:scale-110" />
               </div>
-              <span className="font-bold text-xl text-foreground">Arts & Crafts</span>
+              <span className="font-bold text-xl text-foreground">99 Arts and Crafts</span>
             </Link>
           </AnimatedContainer>
 

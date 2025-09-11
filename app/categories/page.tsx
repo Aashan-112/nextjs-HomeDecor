@@ -43,19 +43,19 @@ export default function CategoriesPage() {
 
         {/* Categories Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="space-y-4">
+              <div key={i} className="space-y-2 sm:space-y-4">
                 <Skeleton className="aspect-square w-full rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
+                <div className="space-y-1 sm:space-y-2">
+                  <Skeleton className="h-4 sm:h-6 w-3/4" />
+                  <Skeleton className="h-3 sm:h-4 w-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {categories.map((category) => (
               <Link key={category.id} href={`/categories/${category.id}`}>
                 <Card className="group overflow-hidden border-border/50 hover:border-border transition-colors">
@@ -69,11 +69,11 @@ export default function CategoriesPage() {
                       />
                     </AspectRatio>
                   </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground group-hover:text-foreground/80 transition-colors mb-2">
+                  <CardContent className="p-2 sm:p-4">
+                    <h3 className="font-semibold text-foreground group-hover:text-foreground/80 transition-colors mb-1 sm:mb-2 text-sm sm:text-base">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{category.description}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 hidden sm:block">{category.description}</p>
                   </CardContent>
                 </Card>
               </Link>

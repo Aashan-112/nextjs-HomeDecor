@@ -279,66 +279,13 @@ export default function ProductsPage() {
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <AnimatedContainer animation="slideDown" delay={100} className="mb-8">
-          <div className="flex justify-between items-start mb-4">
+          <div className="text-center mb-4">
             <StaggerContainer className="space-y-2" staggerDelay={200} initialDelay={300}>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">All Products</h1>
               <p className="text-lg text-muted-foreground">
                 Discover our complete collection of handcrafted home decor pieces
               </p>
             </StaggerContainer>
-            <AnimatedContainer animation="slideLeft" delay={800} className="flex items-center gap-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${
-                    autoRefreshEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                  }`} />
-                  <span>Auto-refresh: {autoRefreshEnabled ? 'ON' : 'OFF'}</span>
-                  <div className={`w-2 h-2 rounded-full ml-2 ${
-                    isStreamConnected ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'
-                  }`} />
-                  <span>Live: {isStreamConnected ? 'CONNECTED' : 'DISCONNECTED'}</span>
-                </div>
-                <span className="text-xs">
-                  Last updated: {lastFetchTime.toLocaleTimeString()}
-                </span>
-              </div>
-              
-              <StaggerContainer 
-                className="flex items-center gap-2" 
-                staggerDelay={100} 
-                initialDelay={1000}
-                animation="scale"
-              >
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                  className="text-xs hover-scale transition-all"
-                >
-                  {autoRefreshEnabled ? '⏸️ Pause' : '▶️ Resume'} Auto-refresh
-                </Button>
-                
-                <Button 
-                  variant={hasNewProducts ? "default" : "outline"} 
-                  onClick={forceRefreshProducts} 
-                  disabled={loading}
-                  className={`hover-lift transition-all ${hasNewProducts ? "animate-pulse shadow-lg hover-glow" : ""}`}
-                >
-                  {hasNewProducts && <Bell className="h-4 w-4 mr-2 animate-bounce" />}
-                  <RefreshCw className={`h-4 w-4 mr-2 transition-transform ${loading ? 'animate-spin' : ''}`} />
-                  {loading ? 'Refreshing...' : hasNewProducts ? 'View New Products!' : 'Refresh'}
-                </Button>
-                
-                <Button variant="ghost" className="hover-scale transition-all" onClick={() => {
-                  setProducts([])
-                  setCategories([])
-                  clearAllFilters()
-                  window.location.reload()
-                }}>
-                  Hard Reset
-                </Button>
-              </StaggerContainer>
-            </AnimatedContainer>
           </div>
         </AnimatedContainer>
 
@@ -567,49 +514,30 @@ export default function ProductsPage() {
         </AnimatedContainer>
 
         {/* Results */}
-        <AnimatedContainer animation="slideUp" delay={700} className="mb-6 space-y-2">
+        <AnimatedContainer animation="slideUp" delay={700} className="mb-6">
           {errorMessage ? (
-            <p className="text-red-600">Failed to load products: {errorMessage}</p>
+            <p className="text-red-600 text-center">Failed to load products: {errorMessage}</p>
           ) : (
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-center">
               {loading ? "Loading..." : `Showing ${filteredProducts.length} of ${products.length} products`}
             </p>
           )}
-          
-          {/* Debug info */}
-          <details className="text-xs text-muted-foreground">
-            <summary className="cursor-pointer hover:text-foreground">Debug Info (click to expand)</summary>
-            <div className="mt-2 p-2 bg-muted/20 rounded text-xs">
-              <p><strong>Total products loaded:</strong> {products.length}</p>
-              <p><strong>Filtered products:</strong> {filteredProducts.length}</p>
-              <p><strong>Latest product:</strong> {products[0]?.name || 'None'} (Created: {products[0]?.created_at ? new Date(products[0].created_at).toLocaleString() : 'N/A'})</p>
-              <p><strong>Search query:</strong> "{searchQuery}"</p>
-              <p><strong>Selected category:</strong> {selectedCategory}</p>
-              <p><strong>Active filters:</strong> {activeFiltersCount}</p>
-              <button 
-                onClick={() => console.log('All products:', products)} 
-                className="mt-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs hover:bg-blue-200"
-              >
-                Log all products to console
-              </button>
-            </div>
-          </details>
         </AnimatedContainer>
 
         {/* Products Grid */}
         {loading ? (
           <StaggerContainer 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6" 
             staggerDelay={50} 
             animation="scale"
           >
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="space-y-4">
+              <div key={i} className="space-y-2 sm:space-y-4">
                 <Skeleton className="aspect-[4/3] w-full rounded-lg animate-shimmer" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4 animate-shimmer" />
-                  <Skeleton className="h-4 w-1/2 animate-shimmer" />
-                  <Skeleton className="h-10 w-full animate-shimmer" />
+                <div className="space-y-1 sm:space-y-2">
+                  <Skeleton className="h-3 sm:h-4 w-3/4 animate-shimmer" />
+                  <Skeleton className="h-3 sm:h-4 w-1/2 animate-shimmer" />
+                  <Skeleton className="h-8 sm:h-10 w-full animate-shimmer" />
                 </div>
               </div>
             ))}
@@ -617,7 +545,7 @@ export default function ProductsPage() {
         ) : filteredProducts.length > 0 ? (
           <StaggerContainer 
             key={filteredProducts.length} // Force re-render when products change
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6" 
             staggerDelay={100} 
             animation="slideUp"
           >
