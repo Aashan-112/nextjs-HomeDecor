@@ -20,7 +20,8 @@ const testimonials = [
     review: "Absolutely stunning! The handcrafted mirror I ordered exceeded my expectations. The quality is exceptional and it's become the centerpiece of my living room.",
     product: "Rustic Wooden Mirror",
     verified: true,
-    image: "/elegant-handcrafted-mirror-with-ornate-frame.png"
+    image: "/elegant-handcrafted-mirror-with-ornate-frame.png",
+    color: "from-pink-500/10 to-rose-500/10"
   },
   {
     id: 2,
@@ -31,7 +32,8 @@ const testimonials = [
     review: "The attention to detail is incredible. You can tell each piece is made with love and care. Fast shipping and beautiful packaging too!",
     product: "Ceramic Table Lamp",
     verified: true,
-    image: "/ceramic-table-lamp.png"
+    image: "/ceramic-table-lamp.png",
+    color: "from-blue-500/10 to-cyan-500/10"
   },
   {
     id: 3,
@@ -39,10 +41,47 @@ const testimonials = [
     avatar: "/avatars/emily.jpg",
     location: "Texas, USA", 
     rating: 5,
-    review: "I've ordered multiple pieces and each one is unique and beautiful. The customer service is outstanding - they really care about their customers.",
+    review: "I've ordered multiple pieces and each one is unique and beautiful. The customer service is outstanding - they really care about their customers!",
     product: "Macrame Wall Hanging",
     verified: true,
-    image: "/macrame-wall-hanging.png"
+    image: "/macrame-wall-hanging.png",
+    color: "from-green-500/10 to-emerald-500/10"
+  },
+  {
+    id: 4,
+    name: "David Thompson",
+    avatar: "/avatars/david.jpg",
+    location: "London, UK",
+    rating: 5,
+    review: "Purchased the Live Edge Coffee Table and it's absolutely magnificent. The natural wood grain is breathtaking and it arrived perfectly packaged.",
+    product: "Live Edge Coffee Table",
+    verified: true,
+    image: "/live-edge-coffee-table.png",
+    color: "from-amber-500/10 to-orange-500/10"
+  },
+  {
+    id: 5,
+    name: "Lisa Park",
+    avatar: "/avatars/lisa.jpg",
+    location: "Toronto, Canada",
+    rating: 5,
+    review: "The Handwoven Rattan Chair is now my favorite reading spot! Such beautiful craftsmanship and incredibly comfortable too. Worth every penny!",
+    product: "Handwoven Rattan Chair",
+    verified: true,
+    image: "/handwoven-rattan-chair.png",
+    color: "from-purple-500/10 to-violet-500/10"
+  },
+  {
+    id: 6,
+    name: "James Wilson",
+    avatar: "/avatars/james.jpg",
+    location: "Sydney, Australia",
+    rating: 5,
+    review: "Amazing quality and unique designs! The Ceramic Vase Collection adds such elegance to our dining room. International shipping was fast too!",
+    product: "Ceramic Vase Collection",
+    verified: true,
+    image: "/ceramic-vase-set.png",
+    color: "from-teal-500/10 to-cyan-500/10"
   }
 ]
 
@@ -52,11 +91,12 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${
+          className={`h-4 w-4 transition-all duration-300 hover:scale-125 ${
             i < rating 
-              ? 'fill-yellow-400 text-yellow-400' 
-              : 'text-gray-300'
+              ? 'fill-yellow-400 text-yellow-400 animate-pulse' 
+              : 'text-gray-300 hover:text-yellow-200'
           }`}
+          style={{animationDelay: `${i * 0.1}s`}}
         />
       ))}
     </div>
@@ -101,26 +141,32 @@ export function Testimonials() {
                 initialDelay={100}
                 animation="slideUp"
               >
-                {testimonials.map((testimonial) => (
-                  <Card key={testimonial.id} className="group border-border/50 hover:border-accent/50 transition-all duration-300 hover-lift bg-background/80 backdrop-blur">
-                    <CardContent className="p-6">
-                      <Quote className="h-8 w-8 text-accent/30 mb-4 group-hover:text-accent/50 transition-colors" />
+                {testimonials.map((testimonial, index) => (
+                  <Card key={testimonial.id} className={`group border-border/50 hover:border-accent/50 transition-all duration-500 hover-lift bg-gradient-to-br ${testimonial.color} backdrop-blur transform hover:scale-[1.02] hover:rotate-1 hover:shadow-xl relative overflow-hidden`}>
+                    {/* Floating orb animation */}
+                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-accent/20 rounded-full blur-md animate-float" style={{animationDelay: `${index * 0.5}s`}} />
+                    <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-primary/20 rounded-full blur-sm animate-float" style={{animationDelay: `${index * 0.7}s`, animationDuration: '4s'}} />
+                    
+                    <CardContent className="p-6 relative z-10">
+                      <Quote className="h-8 w-8 text-accent/40 mb-4 group-hover:text-accent/70 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
                       
                       <blockquote className="text-muted-foreground mb-6 leading-relaxed">
                         "{testimonial.review}"
                       </blockquote>
 
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10 transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-md group-hover:shadow-lg">
                           <img 
                             src={testimonial.image}
                             alt={testimonial.product}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
                           />
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-foreground">{testimonial.product}</div>
-                          <StarRating rating={testimonial.rating} />
+                          <div className="text-sm font-medium text-foreground group-hover:text-accent transition-colors duration-300">{testimonial.product}</div>
+                          <div className="transform transition-all duration-300 group-hover:scale-110">
+                            <StarRating rating={testimonial.rating} />
+                          </div>
                         </div>
                       </div>
 
@@ -139,8 +185,8 @@ export function Testimonials() {
                         </div>
                         
                         {testimonial.verified && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800 hover-scale">
-                            ✓ Verified
+                          <Badge variant="secondary" className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 hover-scale transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-2 shadow-sm group-hover:shadow-md">
+                            Verified Purchase
                           </Badge>
                         )}
                       </div>

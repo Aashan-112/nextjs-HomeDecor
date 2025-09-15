@@ -155,23 +155,23 @@ export function HowItWorks() {
 
         {/* Call to Action */}
         <AnimatedContainer animation="scale" delay={1000} className="text-center mt-12">
-          <div className="bg-accent/5 rounded-2xl p-8 border border-accent/20">
+          <div className="rounded-2xl p-8 border border-accent/20" style={{ backgroundColor: '#CD7F32' }}>
             <h3 className="text-2xl font-bold text-foreground mb-4">
               Ready to Own a Handcrafted Masterpiece?
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+            <p className="text-black mb-6 max-w-2xl mx-auto">
               Each piece tells a story and brings authentic craftsmanship to your home
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-black">
                 <Sparkles className="h-4 w-4 text-accent" />
                 <span>Unique pieces</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-black">
                 <Sparkles className="h-4 w-4 text-accent" />
                 <span>Premium materials</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-black">
                 <Sparkles className="h-4 w-4 text-accent" />
                 <span>Expert craftsmanship</span>
               </div>

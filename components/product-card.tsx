@@ -16,9 +16,10 @@ import { toast } from "sonner"
 
 interface ProductCardProps {
   product: Product
+  className?: string
 }
 
-  export function ProductCard({ product }: ProductCardProps) {
+  export function ProductCard({ product, className }: ProductCardProps) {
     const { addItem } = useCart()
     const { toggleItem, isInWishlist } = useWishlist()
     const [isAddingToCart, setIsAddingToCart] = useState(false)
@@ -63,31 +64,38 @@ interface ProductCardProps {
 
     return (
       <AnimatedContainer animation="slideUp" className="h-full">
-        <Card className="group overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover-lift h-full">
-          <div className="relative overflow-hidden">
-            <AspectRatio ratio={4 / 3}>
-              <img
-                src={getImageSrc(product.images?.[0])}
-                alt={product.name}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                loading="lazy"
-              />
-            </AspectRatio>
+        <Card className={`group overflow-hidden border-border/50 hover:border-accent/30 transition-all duration-500 hover-lift h-full transform-gpu hover:scale-[1.02] hover:rotate-1 hover:shadow-2xl hover:shadow-accent/20 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm ${className || ''}`}>
+          <div className="relative overflow-hidden bg-gradient-to-br from-accent/5 to-secondary/10 group-hover:from-accent/10 group-hover:to-secondary/20 transition-all duration-500">
+            {/* 3D Tilt Effect Container */}
+            <div className="relative transform transition-all duration-500 group-hover:[transform:perspective(1000px)_rotateY(5deg)_rotateX(2deg)]">
+              {/* Shimmer Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+              <AspectRatio ratio={4 / 3}>
+                <img
+                  src={getImageSrc(product.images?.[0])}
+                  alt={product.name}
+                  className="absolute inset-0 h-full w-full object-cover transition-all duration-700 group-hover:scale-115 group-hover:brightness-110 group-hover:contrast-105 filter group-hover:saturate-110"
+                  loading="lazy"
+                />
+                {/* Image overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </AspectRatio>
+            </div>
 
           {/* Badges */}
-          <div className="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 flex flex-col gap-1 sm:gap-2">
+          <div className="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 flex flex-col gap-1 sm:gap-2 z-20">
             {product.is_featured && (
-              <Badge variant="secondary" className="bg-accent text-accent-foreground hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
+              <Badge variant="secondary" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 shadow-lg transform transition-all duration-300 hover:rotate-2 hover:scale-110">
                 Featured
               </Badge>
             )}
             {hasDiscount && (
-              <Badge variant="destructive" className="bg-black text-white hover-scale animate-fadeInLeft animate-delay-500 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
+              <Badge variant="destructive" className="bg-gradient-to-r from-accent to-accent/80 text-white hover-scale animate-fadeInLeft animate-delay-500 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 shadow-lg transform transition-all duration-300 hover:-rotate-2 hover:scale-110 animate-pulse">
                 -{discountPercentage}%
               </Badge>
             )}
             {product.stock_quantity === 0 && (
-              <Badge variant="outline" className="bg-background/90 hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
+              <Badge variant="outline" className="bg-background/90 backdrop-blur-sm hover-scale animate-fadeInLeft animate-delay-300 text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 border-red-300">
                 Out of Stock
               </Badge>
             )}
@@ -97,13 +105,13 @@ interface ProductCardProps {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 bg-background/80 hover-scale hover-glow animate-fadeInRight animate-delay-300 h-8 w-8 sm:h-10 sm:w-10"
+            className="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 bg-background/90 backdrop-blur-sm hover-scale hover-glow animate-fadeInRight animate-delay-300 h-8 w-8 sm:h-10 sm:w-10 z-20 transform transition-all duration-300 hover:rotate-12 hover:scale-110 shadow-lg hover:shadow-accent/30"
             onClick={handleToggleWishlist}
             disabled={isTogglingWishlist}
             aria-pressed={isInWishlist(product?.id || "")}
             aria-label={isInWishlist(product?.id || "") ? "Remove from wishlist" : "Add to wishlist"}
           >
-          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${isInWishlist(product?.id || "") ? "fill-current text-[#f5c6a5] animate-bounce-soft" : ""}`} />
+          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 ${isInWishlist(product?.id || "") ? "fill-current text-red-500 animate-pulse scale-110" : "hover:scale-110"}`} />
           </Button>
         </div>
 
@@ -116,10 +124,10 @@ interface ProductCardProps {
             </Link>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              <span className="text-base sm:text-lg font-semibold text-foreground">${product.price.toFixed(2)}</span>
+              <span className="text-base sm:text-lg font-semibold text-foreground">PKR {product.price.toFixed(2)}</span>
               {hasDiscount && (
                 <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                  ${product.compare_at_price!.toFixed(2)}
+                  PKR {product.compare_at_price!.toFixed(2)}
                 </span>
               )}
             </div>
@@ -138,13 +146,20 @@ interface ProductCardProps {
 
         <CardFooter className="p-2 sm:p-4 pt-0">
           <Button
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-lift transition-all duration-300 h-8 sm:h-10 text-sm"
+            className="w-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 hover-lift transition-all duration-300 h-8 sm:h-10 text-sm transform hover:scale-105 shadow-md hover:shadow-lg relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddToCart}
             disabled={product.stock_quantity === 0 || isAddingToCart}
           >
-            <ShoppingCart className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 transition-transform ${isAddingToCart ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">{isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}</span>
-            <span className="sm:hidden">{isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out" : "Add"}</span>
+            {/* Button shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+            
+            <ShoppingCart className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 transition-all duration-300 relative z-10 ${isAddingToCart ? "animate-bounce" : "group-hover:scale-110"}`} />
+            <span className="hidden sm:inline relative z-10">
+              {isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
+            </span>
+            <span className="sm:hidden relative z-10">
+              {isAddingToCart ? "Adding..." : product.stock_quantity === 0 ? "Out" : "Add"}
+            </span>
           </Button>
         </CardFooter>
       </Card>

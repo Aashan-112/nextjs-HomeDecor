@@ -106,12 +106,12 @@ export function FeaturedProducts() {
   }, [products.length])
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-16" style={{ backgroundColor: '#CD7F32' }}>
       <div className="container mx-auto px-4">
         <AnimatedContainer animation="slideUp" delay={200}>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Collection</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+            <p className="text-lg text-black max-w-2xl mx-auto text-pretty">
               Discover our most popular handcrafted pieces, carefully selected for their exceptional quality and unique
               design.
             </p>
@@ -146,7 +146,7 @@ export function FeaturedProducts() {
                 animation="slideUp"
               >
                 {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} className="border-2 border-black" />
                 ))}
               </StaggerContainer>
             </AnimatedContainer>

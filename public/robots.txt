@@ -1,0 +1,37 @@
+# Robots.txt for 99 Arts and Crafts
+# This file provides instructions to web crawlers about which pages to crawl
+
+# Allow all web crawlers
+User-agent: *
+Allow: /
+
+# Block access to sensitive or unnecessary directories
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /account/
+Disallow: /login/
+Disallow: /register/
+Disallow: /search?
+
+# Allow specific important paths
+Allow: /api/products/featured
+Allow: /api/sitemap
+
+# Crawl-delay (in seconds) - be respectful to server resources
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://99artsandcrafts.com/sitemap.xml
+
+# Special rules for different crawlers
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 1
+
+User-agent: facebookexternalhit
+Allow: /

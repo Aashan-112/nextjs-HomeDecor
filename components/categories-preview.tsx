@@ -19,8 +19,8 @@ export function CategoriesPreview() {
     async function fetchCategories() {
       try {
         const data = await getCategories()
-        // Show only first 4 categories for preview
-        setCategories((data || []).slice(0, 4))
+        // Show more categories for carousel
+        setCategories((data || []).slice(0, 8))
       } catch (error) {
         console.error("Error fetching categories:", error)
       } finally {
@@ -49,48 +49,88 @@ export function CategoriesPreview() {
           </div>
         </AnimatedContainer>
 
-        <StaggerContainer 
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
-          staggerDelay={150}
-          initialDelay={400}
-          animation="slideUp"
-        >
-          {categories.map((category) => (
-            <Link key={category.id} href={`/categories/${category.id}`}>
-              <Card className="group overflow-hidden hover-lift transition-all duration-300 hover:shadow-xl border-0 bg-background/60 backdrop-blur">
-                <CardContent className="p-0">
-                  <div className="relative aspect-square overflow-hidden">
-                    {category.image_url ? (
-                      <Image
-                        src={category.image_url}
-                        alt={category.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
-                        <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 text-accent/60" />
+        <div className="relative overflow-hidden mb-6 sm:mb-8">
+          <div 
+            className="flex items-center gap-4 animate-[scroll_20s_linear_infinite] hover:[animation-play-state:paused]"
+            style={{
+              transform: 'translateX(0)',
+              animation: 'scroll 20s linear infinite'
+            }}
+          >
+            {/* First set of categories */}
+            {categories.map((category) => (
+              <Link key={category.id} href={`/categories/${category.id}`} className="flex-shrink-0">
+                <Card className="group overflow-hidden hover-lift transition-all duration-300 hover:shadow-xl border-0 bg-background/60 backdrop-blur w-48 sm:w-64">
+                  <CardContent className="p-0">
+                    <div className="relative aspect-square overflow-hidden">
+                      {category.image_url ? (
+                        <Image
+                          src={category.image_url}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
+                          <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 text-accent/60" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
+                        <h3 className="font-semibold text-sm sm:text-lg mb-1">{category.name}</h3>
+                        <p className="text-xs sm:text-sm text-white/80 hidden sm:block">{category.description || "Handcrafted pieces"}</p>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
-                      <h3 className="font-semibold text-sm sm:text-lg mb-1">{category.name}</h3>
-                      <p className="text-xs sm:text-sm text-white/80 hidden sm:block">{category.description || "Handcrafted pieces"}</p>
                     </div>
-                  </div>
-                  <div className="p-2 sm:p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors text-sm sm:text-base">
-                        {category.name}
-                      </h3>
-                      <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                    <div className="p-2 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors text-sm sm:text-base">
+                          {category.name}
+                        </h3>
+                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </StaggerContainer>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+            {/* Duplicate set for seamless scrolling */}
+            {categories.map((category) => (
+              <Link key={`duplicate-${category.id}`} href={`/categories/${category.id}`} className="flex-shrink-0">
+                <Card className="group overflow-hidden hover-lift transition-all duration-300 hover:shadow-xl border-0 bg-background/60 backdrop-blur w-48 sm:w-64">
+                  <CardContent className="p-0">
+                    <div className="relative aspect-square overflow-hidden">
+                      {category.image_url ? (
+                        <Image
+                          src={category.image_url}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
+                          <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 text-accent/60" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
+                        <h3 className="font-semibold text-sm sm:text-lg mb-1">{category.name}</h3>
+                        <p className="text-xs sm:text-sm text-white/80 hidden sm:block">{category.description || "Handcrafted pieces"}</p>
+                      </div>
+                    </div>
+                    <div className="p-2 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors text-sm sm:text-base">
+                          {category.name}
+                        </h3>
+                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         <AnimatedContainer animation="scale" delay={800} className="text-center">
           <Button size="lg" variant="outline" className="hover-lift hover-glow transition-all" asChild>
